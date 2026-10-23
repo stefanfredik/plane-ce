@@ -9,8 +9,9 @@ import { useParams } from "next/navigation";
 import type { TIssueGroupByOptions, TIssueOrderByOptions } from "@plane/types";
 // hooks
 import { useWorkItemType } from "@/hooks/store/use-work-item-type";
+import { useCanSeeCustomers } from "./display-helpers";
 
-const GROUPABLE = new Set(["OPTION", "CASCADING", "MEMBER", "BOOLEAN"]);
+const GROUPABLE = new Set(["OPTION", "CASCADING", "MEMBER", "BOOLEAN", "CUSTOMER"]);
 const SORTABLE = new Set([
   "NUMBER",
   "FORMULA",
@@ -22,18 +23,21 @@ const SORTABLE = new Set([
   "CASCADING",
   "MEMBER",
   "BOOLEAN",
+  "CUSTOMER",
 ]);
 
 /** Group-by and order-by choices for the current project's custom properties (project pages only). */
 export const useCustomPropertyDisplayOptions = () => {
   const { projectId } = useParams();
   const store = useWorkItemType();
+  const canSeeCustomers = useCanSeeCustomers();
   const project = projectId?.toString();
   if (!project || !store.isEnabled(project)) return { groupBy: [], orderBy: [] };
 
   // once per property, even when several types share it
   const properties = store
     .getProjectPropertyColumns(project)
+    .filter(({ property }) => canSeeCustomers || property.property_type !== "CUSTOMER")
     .map(({ property }) => ({ property, title: property.display_name }));
   return {
     groupBy: properties

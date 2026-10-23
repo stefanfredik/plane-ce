@@ -23,6 +23,13 @@ export interface ICustomerStore {
   requests: Record<string, TCustomerRequest[] | undefined>;
   workItems: Record<string, TCustomerWorkItem[] | undefined>;
   issueCustomers: Record<string, TIssueCustomer[] | undefined>;
+  /** Customer names seen so far, for showing customer property values without loading every customer. */
+  customerNames: Record<string, string>;
+  getCustomerName: (customerId: string) => string | undefined;
+  /** Load the names of these customers (batched with other calls made in the same render). */
+  requestCustomerNames: (workspaceSlug: string, customerIds: string[]) => void;
+  /** First matches of a search, for pickers (at most 50). */
+  searchCustomers: (workspaceSlug: string, query: string) => Promise<TCustomer[]>;
   fetchCustomers: (workspaceSlug: string, params?: { search?: string; archived?: boolean }) => Promise<void>;
   fetchCustomer: (workspaceSlug: string, customerId: string) => Promise<TCustomer>;
   createCustomer: (workspaceSlug: string, data: Partial<TCustomer>) => Promise<TCustomer>;
@@ -63,7 +70,11 @@ export class CustomerStore implements ICustomerStore {
   requests: Record<string, TCustomerRequest[] | undefined> = {};
   workItems: Record<string, TCustomerWorkItem[] | undefined> = {};
   issueCustomers: Record<string, TIssueCustomer[] | undefined> = {};
+  customerNames: Record<string, string> = {};
   private service = new CustomerService();
+  private namesRequested = new Set<string>();
+  private pendingNames = new Set<string>();
+  private namesTimer: ReturnType<typeof setTimeout> | undefined;
   private inflight: Record<string, Promise<TCustomer[]> | undefined> = {};
 
   constructor() {
@@ -74,6 +85,7 @@ export class CustomerStore implements ICustomerStore {
       requests: observable,
       workItems: observable,
       issueCustomers: observable,
+      customerNames: observable,
       fetchCustomers: action,
       fetchCustomer: action,
       createCustomer: action,
@@ -94,6 +106,40 @@ export class CustomerStore implements ICustomerStore {
     });
   }
 
+  private remember = (customers: TCustomer[]) =>
+    runInAction(() => {
+      for (const customer of customers) this.customerNames[customer.id] = customer.name;
+    });
+
+  getCustomerName = (customerId: string) => this.customerNames[customerId];
+
+  requestCustomerNames = (workspaceSlug: string, customerIds: string[]) => {
+    for (const id of customerIds) {
+      if (this.customerNames[id] !== undefined || this.namesRequested.has(id)) continue;
+      this.namesRequested.add(id);
+      this.pendingNames.add(id);
+    }
+    if (this.pendingNames.size === 0 || this.namesTimer) return;
+    this.namesTimer = setTimeout(() => {
+      this.namesTimer = undefined;
+      const ids = [...this.pendingNames];
+      this.pendingNames.clear();
+      for (let start = 0; start < ids.length; start += 200) {
+        const batch = ids.slice(start, start + 200);
+        this.service
+          .list(workspaceSlug, { ids: batch.join(","), archived: true })
+          .then(this.remember)
+          .catch(() => batch.forEach((id) => this.namesRequested.delete(id)));
+      }
+    }, 30);
+  };
+
+  searchCustomers = async (workspaceSlug: string, query: string) => {
+    const customers = await this.service.list(workspaceSlug, { ...(query ? { search: query } : {}), limit: 50 });
+    this.remember(customers);
+    return customers;
+  };
+
   fetchCustomers = async (workspaceSlug: string, params?: { search?: string; archived?: boolean }) => {
     // components that mount together share one request for the same list
     const key = `${workspaceSlug}|${params?.search ?? ""}|${params?.archived ? 1 : 0}`;
@@ -101,6 +147,7 @@ export class CustomerStore implements ICustomerStore {
       delete this.inflight[key];
     }));
     const customers = await request;
+    this.remember(customers);
     runInAction(() => {
       this.customers = customers;
     });

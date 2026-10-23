@@ -239,7 +239,9 @@ class CustomerRequestDetailAPIEndpoint(BaseAPIView):
         item = self._get(slug, customer_id, request_id)
         if item is None:
             return _missing("Request")
+        issue_ids = list(item.request_issues.values_list("issue_id", flat=True))
         item.request_issues.all().delete(soft=False)
+        svc.clear_property_values_if_unlinked(item.customer_id, issue_ids)
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

@@ -17,13 +17,14 @@ export const PROPERTY_TYPES: TWorkItemPropertyType[] = [
   "BOOLEAN",
   "DATE",
   "MEMBER",
+  "CUSTOMER",
   "RELATION",
   "URL",
   "EMAIL",
   "FILE",
 ];
 
-export const MULTI_VALUE_TYPES: TWorkItemPropertyType[] = ["OPTION", "MEMBER", "FILE", "RELATION"];
+export const MULTI_VALUE_TYPES: TWorkItemPropertyType[] = ["OPTION", "MEMBER", "FILE", "RELATION", "CUSTOMER"];
 
 /** Kinds whose options are edited in the property form. */
 export const OPTION_TYPES: TWorkItemPropertyType[] = ["OPTION", "CASCADING"];

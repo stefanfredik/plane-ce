@@ -649,6 +649,11 @@ def _normalise_values(prop: IssueProperty, raw, field_key, project_id=None, issu
                 raise PropertyValueError({field_key: f"{prop.display_name} must be a work item of this workspace."})
         elif ptype == IssuePropertyType.FORMULA:
             raise PropertyValueError({field_key: f"{prop.display_name} is computed and cannot be set."})
+        elif ptype == IssuePropertyType.CUSTOMER:
+            from plane.db.models import Customer
+
+            if not Customer.objects.filter(id=text, workspace_id=prop.workspace_id, archived_at__isnull=True).exists():
+                raise PropertyValueError({field_key: f"{prop.display_name} must be a customer of this workspace."})
         elif ptype == IssuePropertyType.MEMBER:
             # Members are checked against the work item's project: shared types span projects.
             member_project_id = project_id or prop.project_id
@@ -676,6 +681,8 @@ def _row_value(row: IssuePropertyValue, ptype):
         return None if row.value_asset_id is None else str(row.value_asset_id)
     if ptype == IssuePropertyType.RELATION:
         return None if row.value_issue_id is None else str(row.value_issue_id)
+    if ptype == IssuePropertyType.CUSTOMER:
+        return None if row.value_customer_id is None else str(row.value_customer_id)
     return None
 
 
@@ -696,6 +703,8 @@ def _row_fields(ptype, text):
         return {"value_asset_id": text}
     if ptype == IssuePropertyType.RELATION:
         return {"value_issue_id": text}
+    if ptype == IssuePropertyType.CUSTOMER:
+        return {"value_customer_id": text}
     return {}
 
 
@@ -741,6 +750,11 @@ def _display(prop: IssueProperty, values):
         text = re.sub(r"<[^>]+>", " ", " ".join(values))
         text = re.sub(r"\s+", " ", text).strip()
         return text[:200] + ("…" if len(text) > 200 else "")
+    if prop.property_type == IssuePropertyType.CUSTOMER:
+        from plane.db.models import Customer
+
+        names = dict(Customer.all_objects.filter(id__in=values).values_list("id", "name"))
+        return ", ".join(str(names.get(_uuid(v), v)) for v in values)
     if prop.property_type == IssuePropertyType.MEMBER:
         from plane.db.models import User
 
@@ -789,8 +803,10 @@ def save_issue_property_values(issue: Issue, values, actor, check_required=False
             errors.update(e.errors)
 
     current = issue_property_values(issue)
+    # guests cannot see customers, so a required customer property does not hold them back
+    hidden = hidden_property_ids(actor, issue.workspace_id) if check_required else set()
     for prop_id, prop in props.items():
-        if not prop.is_required:
+        if not prop.is_required or prop_id in hidden:
             continue
         # On create every required property must be given; on edit only the ones being changed are checked.
         if prop_id in clean:
@@ -826,6 +842,8 @@ def save_issue_property_values(issue: Issue, values, actor, check_required=False
                 for text in new_values
             ]
         )
+        if prop.property_type == IssuePropertyType.CUSTOMER:
+            sync_customer_links(issue, old_values, new_values, actor)
         activities.append(
             IssueActivity.objects.create(
                 issue=issue,
@@ -845,6 +863,55 @@ def save_issue_property_values(issue: Issue, values, actor, check_required=False
     if activities and notify:
         transaction.on_commit(lambda: notify_subscribers(issue, actor, activities))
     return issue_property_values(issue)
+
+
+def sync_customer_links(issue: Issue, old_values, new_values, actor):
+    """Keep customer properties and the customers' linked work items in step.
+
+    A customer chosen in a property is linked to the work item; one taken out is unlinked,
+    unless a customer request or another customer property still ties them together.
+    """
+    from plane.db.models import CustomerIssue
+
+    for customer_id in set(new_values) - set(old_values):
+        if not CustomerIssue.objects.filter(customer_id=customer_id, issue=issue).exists():
+            CustomerIssue.objects.create(
+                customer_id=customer_id,
+                issue=issue,
+                workspace_id=issue.workspace_id,
+                created_by=actor,
+                updated_by=actor,
+            )
+    for customer_id in set(old_values) - set(new_values):
+        still_chosen = IssuePropertyValue.objects.filter(issue=issue, value_customer_id=customer_id).exists()
+        if not still_chosen:
+            CustomerIssue.objects.filter(customer_id=customer_id, issue=issue, customer_request__isnull=True).delete(
+                soft=False
+            )
+
+
+def drop_customer_values(issue_ids, customer_id):
+    """A customer was unlinked from work items elsewhere: clear it from their customer properties."""
+    IssuePropertyValue.objects.filter(issue_id__in=issue_ids, value_customer_id=customer_id).delete(soft=False)
+
+
+def hidden_property_ids(user, workspace_id):
+    """Customer properties are hidden from guests, who cannot see customers."""
+    from plane.db.models import WorkspaceMember
+
+    role = (
+        WorkspaceMember.objects.filter(workspace_id=workspace_id, member=user, is_active=True)
+        .values_list("role", flat=True)
+        .first()
+    )
+    if role is not None and role >= 15:
+        return set()
+    return {
+        str(i)
+        for i in IssueProperty.objects.filter(
+            workspace_id=workspace_id, property_type=IssuePropertyType.CUSTOMER
+        ).values_list("id", flat=True)
+    }
 
 
 def recompute_formulas(issue: Issue):
@@ -956,10 +1023,11 @@ VALUE_COLUMNS = (
     "value_member_id",
     "value_asset_id",
     "value_issue_id",
+    "value_customer_id",
 )
 
 
-def _raw_value(ptype, text, number, boolean, day, option, member, asset, issue):
+def _raw_value(ptype, text, number, boolean, day, option, member, asset, issue, customer=None):
     """Like _row_value, for rows read with values_list (no model instances)."""
     if ptype in TEXT_COLUMN_TYPES:
         return text
@@ -977,6 +1045,8 @@ def _raw_value(ptype, text, number, boolean, day, option, member, asset, issue):
         return None if asset is None else str(asset)
     if ptype == IssuePropertyType.RELATION:
         return None if issue is None else str(issue)
+    if ptype == IssuePropertyType.CUSTOMER:
+        return None if customer is None else str(customer)
     return None
 
 

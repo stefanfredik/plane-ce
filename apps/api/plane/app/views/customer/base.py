@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+# Python imports
+import uuid
+
 # Django imports
 from django.db.models import Q
 
@@ -41,7 +44,18 @@ class CustomerEndpoint(BaseAPIView):
             customers = customers.filter(
                 Q(name__icontains=search) | Q(domain__icontains=search) | Q(email__icontains=search)
             )
+        # pickers ask for specific customers (ids) or for the first matches of a search (limit)
+        raw_ids = request.GET.get("ids")
+        if raw_ids is not None:
+            try:
+                ids = [uuid.UUID(i) for i in raw_ids.split(",") if i][:200]
+            except ValueError:
+                return _bad_request({"ids": "Customer ids must be UUIDs."})
+            customers = Customer.objects.filter(workspace__slug=slug, id__in=ids)
         customers = svc.with_counts(customers, request.user).order_by("name")
+        limit = request.GET.get("limit")
+        if limit and limit.isdigit():
+            customers = customers[: min(int(limit), 200)]
         return Response([svc.serialize_customer(c, request.user) for c in customers])
 
     @allow_permission(MEMBERS, level="WORKSPACE")
@@ -180,7 +194,9 @@ class CustomerRequestDetailEndpoint(BaseAPIView):
         item = self._request(slug, customer_id, request_id)
         if item is None:
             return _not_found("Request")
+        issue_ids = list(item.request_issues.values_list("issue_id", flat=True))
         item.request_issues.all().delete(soft=False)
+        svc.clear_property_values_if_unlinked(item.customer_id, issue_ids)
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

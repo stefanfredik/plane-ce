@@ -93,7 +93,8 @@ export class CustomerService extends APIService {
         throw error?.response?.data;
       });
 
-  list(workspaceSlug: string, params?: { search?: string; archived?: boolean }) {
+  /** `ids` fetches specific customers, `limit` caps a search (pickers). */
+  list(workspaceSlug: string, params?: { search?: string; archived?: boolean; ids?: string; limit?: number }) {
     return this.unwrap<TCustomer[]>(this.get(`${this.ws(workspaceSlug)}/customers/`, { params }));
   }
   retrieve(workspaceSlug: string, customerId: string) {

@@ -608,7 +608,11 @@
     "property_type_label": "Property type",
     "show_on_published": "Show on published pages",
     "show_on_published_hint": "Visitors of a published project or view see this property's values (read-only) in the table layout.",
-    "shown_on_published": "Shown on published pages"
+    "shown_on_published": "Shown on published pages",
+    "type_CUSTOMER": "Customer",
+    "customer_search": "Search customers",
+    "customer_none": "No customers found",
+    "add_customer": "Add customer"
   },
   "dash": {
     "title": "Dashboards",

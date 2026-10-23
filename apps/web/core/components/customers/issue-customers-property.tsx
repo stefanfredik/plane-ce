@@ -17,6 +17,7 @@ import { cn } from "@plane/utils";
 import { SidebarPropertyListItem } from "@/components/common/layout/sidebar/property-list-item";
 // hooks
 import { useCustomer } from "@/hooks/store/use-customer";
+import { useWorkItemType } from "@/hooks/store/use-work-item-type";
 import { useUserPermissions } from "@/hooks/store/user";
 // local
 import { errorMessage } from "./constants";
@@ -29,6 +30,7 @@ export const IssueCustomersProperty = observer(function IssueCustomersProperty(p
   const { workspaceSlug, projectId, issueId, disabled } = props;
   const { t } = useTranslation();
   const store = useCustomer();
+  const workItemTypeStore = useWorkItemType();
   const { allowPermissions } = useUserPermissions();
   const canSee = allowPermissions([EUserPermissions.ADMIN, EUserPermissions.MEMBER], EUserPermissionsLevel.WORKSPACE);
 
@@ -48,6 +50,9 @@ export const IssueCustomersProperty = observer(function IssueCustomersProperty(p
   const handleChange = async (ids: string[]) => {
     try {
       await store.setIssueCustomers(workspaceSlug, projectId, issueId, ids);
+      // unlinking a customer also clears it from customer properties
+      if (workItemTypeStore.issueValues[issueId] !== undefined)
+        void workItemTypeStore.fetchIssueValues(workspaceSlug, projectId, issueId).catch(() => undefined);
     } catch (error) {
       setToast({ type: TOAST_TYPE.ERROR, title: t("cust.error"), message: errorMessage(error, t("cust.error")) });
     }

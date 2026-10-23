@@ -216,7 +216,8 @@ class IssuePropertyValueEndpoint(BaseAPIView):
         issue = self._issue(slug, project_id, issue_id)
         if issue is None:
             return Response({"error": "Work item not found"}, status=status.HTTP_404_NOT_FOUND)
-        return Response(wit.issue_property_values(issue))
+        hidden = wit.hidden_property_ids(request.user, issue.workspace_id)
+        return Response({k: v for k, v in wit.issue_property_values(issue).items() if k not in hidden})
 
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
     def put(self, request, slug, project_id, issue_id):
@@ -292,7 +293,12 @@ class ProjectPropertyValuesEndpoint(BaseAPIView):
                 issue_ids = [str(uuid.UUID(i)) for i in issue_ids]
             except ValueError:
                 return _bad_request({"issue_ids": "Work item ids must be UUIDs."})
-        return Response(wit.project_property_values(project_id, issue_ids))
+        project = Project.objects.get(workspace__slug=slug, pk=project_id)
+        hidden = wit.hidden_property_ids(request.user, project.workspace_id)
+        values = wit.project_property_values(project_id, issue_ids)
+        if hidden:
+            values = {i: {k: v for k, v in props.items() if k not in hidden} for i, props in values.items()}
+        return Response(values)
 
 
 class PropertyRelationDetailsEndpoint(BaseAPIView):

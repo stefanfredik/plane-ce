@@ -13,7 +13,7 @@ import type { IIssueDisplayProperties, TIssue } from "@plane/types";
 import { useWorkItemType } from "@/hooks/store/use-work-item-type";
 // local
 import type { TPropertyColumn } from "@/store/work-item-type.store";
-import { isCustomPropertyShown } from "./display-helpers";
+import { isCustomPropertyShown, useCanSeeCustomers } from "./display-helpers";
 import { PropertyValueField } from "./property-value-field";
 import { WorkItemPropertyIcon } from "./property-icon";
 
@@ -23,10 +23,12 @@ const useCustomColumns = (
   displayProperties: IIssueDisplayProperties
 ): TPropertyColumn[] => {
   const store = useWorkItemType();
+  const canSeeCustomers = useCanSeeCustomers();
   if (!projectId || !store.isEnabled(projectId)) return [];
   return store
     .getProjectPropertyColumns(projectId)
-    .filter(({ property }) => isCustomPropertyShown(displayProperties, property.id));
+    .filter(({ property }) => isCustomPropertyShown(displayProperties, property.id))
+    .filter(({ property }) => canSeeCustomers || property.property_type !== "CUSTOMER");
 };
 
 type THeaderProps = { displayProperties: IIssueDisplayProperties };

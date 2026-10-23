@@ -17,6 +17,7 @@ import { useWorkItemType } from "@/hooks/store/use-work-item-type";
 // local
 import type { TWorkItemPropertyValues } from "@/services/work-item-type.service";
 import { PropertyValueField } from "./property-value-field";
+import { useCanSeeCustomers, visibleToViewer } from "./display-helpers";
 import { WorkItemTypeDropdown } from "./type-dropdown";
 import { WorkItemPropertyIcon } from "./property-icon";
 
@@ -73,7 +74,8 @@ export const IssueModalCustomProperties = observer(function IssueModalCustomProp
   const { issuePropertyValues, setIssuePropertyValues, issuePropertyValueErrors, setIssuePropertyValueErrors } =
     useIssueModal();
   const values = issuePropertyValues as TWorkItemPropertyValues;
-  const properties = store.getActiveProperties(projectId, typeId);
+  const canSeeCustomers = useCanSeeCustomers();
+  const properties = visibleToViewer(store.getActiveProperties(projectId, typeId), canSeeCustomers);
   const loadedFor = useRef<string | null>(null);
 
   // Start from the saved values when editing, or from the type's defaults when creating.

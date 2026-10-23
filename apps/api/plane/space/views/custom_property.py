@@ -128,7 +128,7 @@ class PublishedPropertyValuesEndpoint(BaseAPIView):
         }
         members = dict(User.objects.filter(id__in=member_ids).values_list("id", "display_name"))
         result = {str(i): {} for i in visible_ids}
-        for issue_id, prop_id, text, number, boolean, day, option, member, _asset, _issue in rows:
+        for issue_id, prop_id, text, number, boolean, day, option, member, _asset, _issue, _customer in rows:
             kind = props[prop_id].property_type
             if kind in (IssuePropertyType.OPTION, IssuePropertyType.CASCADING):
                 label = options.get(option)

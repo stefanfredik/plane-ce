@@ -290,6 +290,16 @@ export class WorkItemTypeStore implements IWorkItemTypeStore {
       this.issueValues[issueId] = saved;
     });
     this.refreshGroupedList(workspaceSlug, projectId, Object.keys(values));
+    // customer properties link the work item to customers, so the "Customers" row changes too
+    const customerStore = this.rootStore?.customer;
+    const changedCustomer = Object.keys(values).some(
+      (id) =>
+        this.getProjectTypes(projectId)
+          .flatMap((type) => type.properties)
+          .find((property) => property.id === id)?.property_type === "CUSTOMER"
+    );
+    if (changedCustomer && customerStore?.issueCustomers[issueId] !== undefined)
+      void customerStore.fetchIssueCustomers(workspaceSlug, projectId, issueId).catch(() => undefined);
     return saved;
   };
 

@@ -14,7 +14,11 @@ import { useTranslation } from "@plane/i18n";
 // types
 import type { IIssueDisplayProperties } from "@plane/types";
 // components
-import { customPropertyDisplayKey, isCustomPropertyShown } from "@/components/work-item-types/display-helpers";
+import {
+  customPropertyDisplayKey,
+  isCustomPropertyShown,
+  useCanSeeCustomers,
+} from "@/components/work-item-types/display-helpers";
 import { WorkItemPropertyIcon } from "@/components/work-item-types/property-icon";
 // hooks
 import { useWorkItemType } from "@/hooks/store/use-work-item-type";
@@ -45,7 +49,10 @@ export const FilterDisplayProperties = observer(function FilterDisplayProperties
   // custom properties of the current project's types (once each), each with its own switch
   const { projectId } = useParams();
   const workItemTypeStore = useWorkItemType();
-  const customColumns = projectId && !isEpic ? workItemTypeStore.getProjectPropertyColumns(projectId.toString()) : [];
+  const canSeeCustomers = useCanSeeCustomers();
+  const customColumns = (
+    projectId && !isEpic ? workItemTypeStore.getProjectPropertyColumns(projectId.toString()) : []
+  ).filter(({ property }) => canSeeCustomers || property.property_type !== "CUSTOMER");
 
   // Filter out "cycle" and "module" keys if cycleViewDisabled or moduleViewDisabled is true
   // Also filter out display properties that should not be rendered

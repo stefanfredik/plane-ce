@@ -10,7 +10,7 @@ import { extractInstruction } from "@atlaskit/pragmatic-drag-and-drop-hitbox/tre
 import { clone, isNil, pull, uniq, concat } from "lodash-es";
 import scrollIntoView from "smooth-scroll-into-view-if-needed";
 import type { FC } from "react";
-import { CalendarDays, LayersIcon, Paperclip } from "lucide-react";
+import { CalendarDays, Contact, LayersIcon, Paperclip } from "lucide-react";
 // plane types
 import { EIconSize, ISSUE_PRIORITIES, STATE_GROUPS } from "@plane/constants";
 import { Logo } from "@plane/propel/emoji-icon-picker";
@@ -323,6 +323,22 @@ const getCustomPropertyColumns = (propertyId: string, scopeProjectId?: string): 
       { id: "true", name: "Yes", icon: groupDot("#16a34a"), payload: {} },
       { id: "false", name: "No", icon: groupDot(), payload: {} },
     ];
+  if (property.property_type === "CUSTOMER") {
+    // the server only groups by customers chosen in the project; the full list gives them names
+    const customerStore = store.customer;
+    const workspaceSlug = store.router.workspaceSlug;
+    if (customerStore.customers === undefined && workspaceSlug)
+      void customerStore.fetchCustomers(workspaceSlug).catch(() => undefined);
+    return [
+      ...(customerStore.customers ?? []).map((customer) => ({
+        id: customer.id,
+        name: customer.name,
+        icon: <Contact className="size-3.5 text-tertiary" />,
+        payload: {},
+      })),
+      none,
+    ];
+  }
   if (property.property_type === "MEMBER") {
     const { getUserDetails } = store.memberRoot;
     const memberIds = store.memberRoot.project.getProjectMemberIds(projectId, false) ?? [];

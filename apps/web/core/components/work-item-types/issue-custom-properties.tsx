@@ -16,6 +16,7 @@ import { cn } from "@plane/utils";
 import { useWorkItemType } from "@/hooks/store/use-work-item-type";
 // local
 import { errorMessage } from "./constants";
+import { useCanSeeCustomers, visibleToViewer } from "./display-helpers";
 import { PropertyValueField } from "./property-value-field";
 import { WorkItemPropertyIcon } from "./property-icon";
 
@@ -35,7 +36,8 @@ export const IssueCustomProperties = observer(function IssueCustomProperties(pro
   const { t } = useTranslation();
   const store = useWorkItemType();
   const issueType = store.getTypeById(projectId, typeId);
-  const properties = store.getActiveProperties(projectId, typeId);
+  const canSeeCustomers = useCanSeeCustomers();
+  const properties = visibleToViewer(store.getActiveProperties(projectId, typeId), canSeeCustomers);
   const values = store.issueValues[issueId];
   const [isOpen, setIsOpen] = useState(true);
 

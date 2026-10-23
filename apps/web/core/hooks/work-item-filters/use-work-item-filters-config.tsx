@@ -76,6 +76,7 @@ const FILTERABLE_PROPERTY_TYPES = new Set([
   "OPTION",
   "CASCADING",
   "MEMBER",
+  "CUSTOMER",
   "DATE",
   "BOOLEAN",
   "NUMBER",
@@ -428,58 +429,69 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
   // one filter per filterable custom property (dropdown, member, date, yes/no)
   const customPropertyFilterConfigs = useMemo(() => {
     const isEnabled = isFilterEnabled("type_id") && typesEnabled;
-    const typesWithProperties = projectWorkItemTypes.filter((type) => type.properties.length > 0);
-    return typesWithProperties.flatMap((type) =>
-      type.properties
-        .filter((property) => property.is_active && FILTERABLE_PROPERTY_TYPES.has(property.property_type))
-        .map((property) => {
-          const key = `customproperty_${property.id}` as TWorkItemFilterProperty;
-          const label =
-            typesWithProperties.length > 1 ? `${type.name} · ${property.display_name}` : property.display_name;
-          const shared = { isEnabled, filterIcon: getPropertyIconComponent(property), ...operatorConfigs };
-          if (property.property_type === "MEMBER")
-            return getCustomPropertyFilterConfig(key, label, {
-              kind: "member",
-              ...shared,
-              members: members ?? [],
-              getOptionIcon: (memberDetails) => (
-                <Avatar
-                  name={memberDetails.display_name}
-                  src={getFileURL(memberDetails.avatar_url)}
-                  showTooltip={false}
-                  size="sm"
-                />
-              ),
-            });
-          if (property.property_type === "DATE")
-            return getCustomPropertyFilterConfig(key, label, { kind: "date", ...shared });
-          if (TEXT_PROPERTY_TYPES.has(property.property_type))
-            return getCustomPropertyFilterConfig(key, label, { kind: "text", ...shared });
-          if (property.property_type === "NUMBER" || property.property_type === "FORMULA")
-            return getCustomPropertyFilterConfig(key, label, { kind: "number", ...shared });
-          const optionName = (option: { name: string; parent_id?: string | null }) => {
-            const parent = option.parent_id && property.options.find((o) => o.id === option.parent_id);
-            return parent ? `${parent.name} › ${option.name}` : option.name;
-          };
-          const items =
-            property.property_type === "BOOLEAN"
-              ? [
-                  { id: "true", name: "Yes" },
-                  { id: "false", name: "No" },
-                ]
-              : property.options
-                  .filter((option) => option.id)
-                  .map((option) => ({ id: option.id as string, name: optionName(option), color: option.color }));
-          return getCustomPropertyFilterConfig(key, label, {
-            kind: property.property_type === "BOOLEAN" ? "boolean" : "option",
-            ...shared,
-            items,
-            getOptionIcon: (color: string) =>
-              color ? <span className="size-2 rounded-full" style={{ backgroundColor: color }} /> : null,
-          });
-        })
-    );
-  }, [isFilterEnabled, typesEnabled, projectWorkItemTypes, operatorConfigs, members]);
+    // one filter per property: properties live in a project pool and types may share them
+    const seen = new Set<string>();
+    const properties = projectWorkItemTypes
+      .flatMap((type) => type.properties)
+      .filter((property) => {
+        if (seen.has(property.id)) return false;
+        seen.add(property.id);
+        return property.is_active && FILTERABLE_PROPERTY_TYPES.has(property.property_type);
+      })
+      .filter((property) => canSeeCustomers || property.property_type !== "CUSTOMER");
+    return properties.map((property) => {
+      const key = `customproperty_${property.id}` as TWorkItemFilterProperty;
+      const label = property.display_name;
+      const shared = { isEnabled, filterIcon: getPropertyIconComponent(property), ...operatorConfigs };
+      if (property.property_type === "CUSTOMER")
+        return getCustomPropertyFilterConfig(key, label, {
+          kind: "option",
+          ...shared,
+          items: (customers ?? []).map((customer) => ({ id: customer.id, name: customer.name })),
+          getOptionIcon: () => <Contact className="size-3 text-tertiary" />,
+        });
+      if (property.property_type === "MEMBER")
+        return getCustomPropertyFilterConfig(key, label, {
+          kind: "member",
+          ...shared,
+          members: members ?? [],
+          getOptionIcon: (memberDetails) => (
+            <Avatar
+              name={memberDetails.display_name}
+              src={getFileURL(memberDetails.avatar_url)}
+              showTooltip={false}
+              size="sm"
+            />
+          ),
+        });
+      if (property.property_type === "DATE")
+        return getCustomPropertyFilterConfig(key, label, { kind: "date", ...shared });
+      if (TEXT_PROPERTY_TYPES.has(property.property_type))
+        return getCustomPropertyFilterConfig(key, label, { kind: "text", ...shared });
+      if (property.property_type === "NUMBER" || property.property_type === "FORMULA")
+        return getCustomPropertyFilterConfig(key, label, { kind: "number", ...shared });
+      const optionName = (option: { name: string; parent_id?: string | null }) => {
+        const parent = option.parent_id && property.options.find((o) => o.id === option.parent_id);
+        return parent ? `${parent.name} › ${option.name}` : option.name;
+      };
+      const items =
+        property.property_type === "BOOLEAN"
+          ? [
+              { id: "true", name: "Yes" },
+              { id: "false", name: "No" },
+            ]
+          : property.options
+              .filter((option) => option.id)
+              .map((option) => ({ id: option.id as string, name: optionName(option), color: option.color }));
+      return getCustomPropertyFilterConfig(key, label, {
+        kind: property.property_type === "BOOLEAN" ? "boolean" : "option",
+        ...shared,
+        items,
+        getOptionIcon: (color: string) =>
+          color ? <span className="size-2 rounded-full" style={{ backgroundColor: color }} /> : null,
+      });
+    });
+  }, [isFilterEnabled, typesEnabled, projectWorkItemTypes, operatorConfigs, members, canSeeCustomers, customers]);
 
   return {
     areAllConfigsInitialized,

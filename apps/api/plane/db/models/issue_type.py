@@ -75,6 +75,8 @@ class IssuePropertyType(models.TextChoices):
     RICH_TEXT = "RICH_TEXT", "Rich text"
     # Another work item of the workspace
     RELATION = "RELATION", "Work item relation"
+    # A customer of the workspace; kept in step with the customer's linked work items
+    CUSTOMER = "CUSTOMER", "Customer"
 
 
 # Property types that may hold several values on one work item.
@@ -83,6 +85,7 @@ MULTI_VALUE_PROPERTY_TYPES = {
     IssuePropertyType.MEMBER,
     IssuePropertyType.FILE,
     IssuePropertyType.RELATION,
+    IssuePropertyType.CUSTOMER,
 }
 
 
@@ -192,6 +195,9 @@ class IssuePropertyValue(ProjectBaseModel):
     value_asset = models.ForeignKey(
         "db.FileAsset", related_name="property_values", on_delete=models.CASCADE, null=True, blank=True
     )
+    value_customer = models.ForeignKey(
+        "db.Customer", related_name="work_item_property_values", on_delete=models.CASCADE, null=True, blank=True
+    )
 
     class Meta:
         indexes = [
@@ -201,6 +207,7 @@ class IssuePropertyValue(ProjectBaseModel):
             models.Index(fields=["property", "value_member"], name="issue_prop_val_prop_member_idx"),
             models.Index(fields=["property", "value_number"], name="issue_prop_val_prop_num_idx"),
             models.Index(fields=["property", "value_date"], name="issue_prop_val_prop_date_idx"),
+            models.Index(fields=["property", "value_customer"], name="issue_prop_val_prop_cust_idx"),
         ]
         verbose_name = "Issue Property Value"
         verbose_name_plural = "Issue Property Values"

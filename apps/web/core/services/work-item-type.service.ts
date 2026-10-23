@@ -22,7 +22,8 @@ export type TWorkItemPropertyType =
   | "FORMULA"
   | "CASCADING"
   | "RICH_TEXT"
-  | "RELATION";
+  | "RELATION"
+  | "CUSTOMER";
 
 export type TWorkItemPropertyOption = {
   id?: string;

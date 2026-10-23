@@ -10,6 +10,7 @@ type decides which lookups are allowed and which value column is compared:
     OPTION / CASCADING   in / exact               option ids (a first-level cascading
                                                   option also matches its children)
     MEMBER               in / exact               user ids
+    CUSTOMER             in / exact               customer ids
     BOOLEAN              in / exact               "true" / "false"
     DATE                 exact / range            YYYY-MM-DD, range as "from,to" (inclusive)
     NUMBER / FORMULA     exact / gte / lte / range numbers, range as "from,to"
@@ -39,6 +40,7 @@ _ALLOWED = {
     "OPTION": {"in", "exact"},
     "CASCADING": {"in", "exact"},
     "MEMBER": {"in", "exact"},
+    "CUSTOMER": {"in", "exact"},
     "BOOLEAN": {"in", "exact"},
     "DATE": {"exact", "range"},
     **{kind: {"exact", "gte", "lte", "range"} for kind in _NUMBER_KINDS},
@@ -123,6 +125,8 @@ def custom_property_q(key, value):
         rows = rows.filter(value_option_id__in=_uuids(values))
     elif prop.property_type == "MEMBER":
         rows = rows.filter(value_member_id__in=_uuids(values))
+    elif prop.property_type == "CUSTOMER":
+        rows = rows.filter(value_customer_id__in=_uuids(values))
     elif prop.property_type == "BOOLEAN":
         wanted = {v.lower() for v in values}
         if not wanted <= {"true", "false"}:
@@ -149,8 +153,20 @@ def custom_property_q(key, value):
 CUSTOM_PROPERTY_FIELD = re.compile(r"^(?P<desc>-?)customproperty_(?P<property_id>[0-9a-fA-F-]{36})$")
 GROUP_FIELD_NAME = "custom_property_group"
 SORT_FIELD_NAME = "custom_property_sort"
-GROUPABLE_KINDS = {"OPTION", "CASCADING", "MEMBER", "BOOLEAN"}
-SORTABLE_KINDS = {"NUMBER", "FORMULA", "DATE", "TEXT", "EMAIL", "URL", "OPTION", "CASCADING", "MEMBER", "BOOLEAN"}
+GROUPABLE_KINDS = {"OPTION", "CASCADING", "MEMBER", "BOOLEAN", "CUSTOMER"}
+SORTABLE_KINDS = {
+    "NUMBER",
+    "FORMULA",
+    "DATE",
+    "TEXT",
+    "EMAIL",
+    "URL",
+    "OPTION",
+    "CASCADING",
+    "MEMBER",
+    "BOOLEAN",
+    "CUSTOMER",
+}
 
 
 def _property_for(value, project_id, kinds):
@@ -183,6 +199,7 @@ def custom_property_grouping(project_id, group_by):
         "OPTION": "value_option_id",
         "CASCADING": "value_option_id",
         "MEMBER": "value_member_id",
+        "CUSTOMER": "value_customer_id",
         "BOOLEAN": "value_boolean",
     }[prop.property_type]
     value = Subquery(
@@ -202,6 +219,15 @@ def custom_property_grouping(project_id, group_by):
                 "member_id", flat=True
             )
         ] + ["None"]
+    elif prop.property_type == "CUSTOMER":
+        # only customers actually chosen in the project, so thousands of customers do not mean thousands of groups
+        chosen = (
+            IssuePropertyValue.objects.filter(property=prop, issue__project_id=project_id, value_customer__isnull=False)
+            .values_list("value_customer_id", "value_customer__name")
+            .distinct()
+            .order_by("value_customer__name")
+        )
+        keys = [str(customer_id) for customer_id, _name in chosen] + ["None"]
     else:
         options = IssuePropertyOption.objects.filter(property=prop, deleted_at__isnull=True)
         if prop.property_type == "CASCADING":
@@ -228,6 +254,7 @@ def custom_property_ordering(queryset, order_by_param, project_id):
         "OPTION": "value_option__sort_order",
         "CASCADING": "value_option__sort_order",
         "MEMBER": "value_member__display_name",
+        "CUSTOMER": "value_customer__name",
     }.get(prop.property_type, "value_text")
     rows = IssuePropertyValue.objects.filter(issue_id=OuterRef("pk"), property=prop, deleted_at__isnull=True)
     queryset = queryset.annotate(**{SORT_FIELD_NAME: Subquery(rows.values(column)[:1])})

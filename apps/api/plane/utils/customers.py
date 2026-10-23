@@ -192,6 +192,10 @@ def update_customer(customer, user, data):
 
 @transaction.atomic
 def delete_customer(customer):
+    from plane.utils.work_item_types import drop_customer_values
+
+    issue_ids = list(CustomerIssue.objects.filter(customer=customer).values_list("issue_id", flat=True))
+    drop_customer_values(issue_ids, customer.id)
     CustomerIssue.objects.filter(customer=customer).delete(soft=False)
     CustomerPropertyValue.objects.filter(customer=customer).delete(soft=False)
     CustomerRequest.objects.filter(customer=customer).delete()
@@ -560,12 +564,28 @@ def link_issues(customer, user, issue_ids, request=None):
     return issues
 
 
+def clear_property_values_if_unlinked(customer_id, issue_ids):
+    """Work items no longer linked to the customer lose it from their customer properties too."""
+    from plane.utils.work_item_types import drop_customer_values
+
+    still_linked = {
+        str(i)
+        for i in CustomerIssue.objects.filter(customer_id=customer_id, issue_id__in=issue_ids).values_list(
+            "issue_id", flat=True
+        )
+    }
+    unlinked = [i for i in issue_ids if str(i) not in still_linked]
+    if unlinked:
+        drop_customer_values(unlinked, customer_id)
+
+
 @transaction.atomic
 def unlink_issue(customer, issue_id, request=None):
     links = CustomerIssue.objects.filter(customer=customer, issue_id=issue_id)
     if request is not None:
         links = links.filter(customer_request=request)
     links.delete(soft=False)
+    clear_property_values_if_unlinked(customer.id, [issue_id])
 
 
 @transaction.atomic
@@ -590,6 +610,7 @@ def update_request(request, user, data):
         wanted = {str(i) for i in data["work_item_ids"] or []}
         current = {str(i) for i in request.request_issues.values_list("issue_id", flat=True)}
         request.request_issues.filter(issue_id__in=current - wanted).delete(soft=False)
+        clear_property_values_if_unlinked(request.customer_id, list(current - wanted))
         if wanted - current:
             link_issues(request.customer, user, list(wanted - current), request)
     return request

@@ -202,3 +202,114 @@ class TestPublicCustomerApi:
         assert listed.data[0]["project__identifier"] == "BUG"
         assert removed.status_code == status.HTTP_204_NO_CONTENT
         assert api_key_client.get(f"{base}/customers/{cid}/").status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.contract
+class TestCustomerProperty:
+    """A "Customer" work item property is kept in step with the customer's linked work items."""
+
+    @pytest.fixture
+    def prop(self, session_client, workspace, project):
+        base = f"/api/workspaces/{workspace.slug}/projects/{project.id}"
+        task = session_client.post(f"{base}/work-item-types/enable/", {}, format="json").data["types"][0]["id"]
+        response = session_client.post(
+            f"{base}/work-item-types/{task}/properties/",
+            {"display_name": "Customer", "property_type": "CUSTOMER"},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        return response.data
+
+    def values_url(self, workspace, project, issue):
+        return ws(workspace, f"projects/{project.id}/issues/{issue.id}/property-values/")
+
+    def items(self, session_client, workspace, customer):
+        return [i["name"] for i in session_client.get(ws(workspace, f"customers/{customer['id']}/issues/")).data]
+
+    def test_choosing_and_clearing_links_the_work_item(
+        self, session_client, workspace, project, customer, issues, prop
+    ):
+        url = self.values_url(workspace, project, issues[0])
+
+        chosen = session_client.put(url, {"values": {prop["id"]: [customer["id"]]}}, format="json")
+        linked = self.items(session_client, workspace, customer)
+        session_client.put(url, {"values": {prop["id"]: []}}, format="json")
+
+        assert chosen.status_code == status.HTTP_200_OK
+        assert linked == ["a"]
+        assert self.items(session_client, workspace, customer) == []
+
+    def test_unlinking_from_the_customer_clears_the_property(
+        self, session_client, workspace, project, customer, issues, prop
+    ):
+        url = self.values_url(workspace, project, issues[0])
+        session_client.put(url, {"values": {prop["id"]: [customer["id"]]}}, format="json")
+
+        session_client.delete(ws(workspace, f"customers/{customer['id']}/issues/{issues[0].id}/"))
+
+        assert session_client.get(url).data[prop["id"]] == []
+
+    def test_request_links_survive_clearing_the_property(
+        self, session_client, workspace, project, customer, issues, prop
+    ):
+        session_client.post(
+            ws(workspace, f"customers/{customer['id']}/requests/"),
+            {"name": "ONT offline", "work_item_ids": [str(issues[0].id)]},
+            format="json",
+        )
+        url = self.values_url(workspace, project, issues[0])
+        session_client.put(url, {"values": {prop["id"]: [customer["id"]]}}, format="json")
+
+        session_client.put(url, {"values": {prop["id"]: []}}, format="json")
+
+        assert self.items(session_client, workspace, customer) == ["a"]
+
+    def test_archived_customers_cannot_be_chosen(self, session_client, workspace, project, customer, issues, prop):
+        session_client.patch(ws(workspace, f"customers/{customer['id']}/"), {"archived": True}, format="json")
+
+        response = session_client.put(
+            self.values_url(workspace, project, issues[0]), {"values": {prop["id"]: [customer["id"]]}}, format="json"
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_guests_do_not_see_customer_values(
+        self, session_client, api_client, workspace, project, customer, issues, prop
+    ):
+        url = self.values_url(workspace, project, issues[0])
+        session_client.put(url, {"values": {prop["id"]: [customer["id"]]}}, format="json")
+        guest = member(workspace, role=5)
+        ProjectMember.objects.create(project=project, member=guest, role=5, is_active=True)
+        api_client.force_authenticate(user=guest)
+
+        single = api_client.get(url).data
+        batch = api_client.get(
+            ws(workspace, f"projects/{project.id}/property-values/"), {"issue_ids": str(issues[0].id)}
+        ).data
+
+        assert prop["id"] not in single
+        assert prop["id"] not in batch.get(str(issues[0].id), {})
+
+    def test_filter_and_group_by_customer(self, session_client, workspace, project, customer, issues, prop):
+        session_client.put(
+            self.values_url(workspace, project, issues[1]), {"values": {prop["id"]: [customer["id"]]}}, format="json"
+        )
+        list_url = ws(workspace, f"projects/{project.id}/issues/")
+
+        filtered = session_client.get(
+            list_url, {"filters": json.dumps({f"customproperty_{prop['id']}__in": customer["id"]})}
+        ).data
+        grouped = session_client.get(list_url, {"group_by": f"customproperty_{prop['id']}", "per_page": 50}).data
+
+        rows = filtered["results"] if isinstance(filtered, dict) else filtered
+        assert [r["name"] for r in rows] == ["b"]
+        assert grouped["results"][customer["id"]]["total_results"] == 1
+
+    def test_list_by_ids_and_limit(self, session_client, workspace, customer):
+        other = session_client.post(ws(workspace, "customers/"), {"name": "Jaga"}, format="json").data
+
+        by_ids = session_client.get(ws(workspace, "customers/"), {"ids": other["id"]}).data
+        limited = session_client.get(ws(workspace, "customers/"), {"limit": 1}).data
+
+        assert [c["name"] for c in by_ids] == ["Jaga"]
+        assert len(limited) == 1

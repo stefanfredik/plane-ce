@@ -15,6 +15,7 @@ import { DateDropdown } from "@/components/dropdowns/date";
 import { MemberDropdown } from "@/components/dropdowns/member/dropdown";
 // local
 import type { TWorkItemProperty } from "@/services/work-item-type.service";
+import { CustomerPropertyField } from "./customer-property-field";
 import { FilePropertyField, RelationPropertyField, RichTextPropertyField } from "./property-value-extra";
 
 type Props = {
@@ -244,6 +245,10 @@ export const PropertyValueField = observer(function PropertyValueField(props: Pr
           disabled={disabled}
           hasError={hasError}
         />
+      );
+    case "CUSTOMER":
+      return (
+        <CustomerPropertyField property={property} value={value} onChange={onChange} disabled={disabled} mode={mode} />
       );
     case "RELATION":
       return (
