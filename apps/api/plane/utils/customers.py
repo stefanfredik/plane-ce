@@ -16,7 +16,8 @@ from urllib.parse import urlparse
 
 # Django imports
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Max, Q
+from django.db.models import Count, IntegerField, Max, OuterRef, Q, Subquery, Value
+from django.db.models.functions import Coalesce
 
 # Module imports
 from plane.db.models import (
@@ -70,10 +71,37 @@ def visible_issue_q(user):
     )
 
 
-def serialize_customer(customer, user=None):
-    issues = CustomerIssue.objects.filter(customer=customer, issue__deleted_at__isnull=True)
+def visible_project_ids(user):
+    """Projects whose work items the user may see (active member, project not archived)."""
+    from plane.db.models import ProjectMember
+
+    return list(
+        ProjectMember.objects.filter(member=user, is_active=True, project__archived_at__isnull=True).values_list(
+            "project_id", flat=True
+        )
+    )
+
+
+def with_counts(customers, user=None):
+    """Annotate request and visible work item counts in SQL, so lists do not query per customer."""
+    requests = (
+        CustomerRequest.objects.filter(customer=OuterRef("pk")).values("customer").annotate(n=Count("id")).values("n")
+    )
+    # same rules as Issue.issue_objects (no drafts, archived, triage or deleted items)
+    visible = Issue.issue_objects.all()
     if user is not None:
-        issues = issues.filter(issue__in=Issue.issue_objects.filter(visible_issue_q(user)))
+        visible = visible.filter(project_id__in=visible_project_ids(user))
+    links = CustomerIssue.objects.filter(customer=OuterRef("pk"), issue__in=visible.values("id"))
+    items = links.values("customer").annotate(n=Count("issue_id", distinct=True)).values("n")
+    return customers.annotate(
+        request_count=Coalesce(Subquery(requests, output_field=IntegerField()), Value(0)),
+        visible_item_count=Coalesce(Subquery(items, output_field=IntegerField()), Value(0)),
+    )
+
+
+def serialize_customer(customer, user=None):
+    if not hasattr(customer, "visible_item_count"):
+        customer = with_counts(Customer.objects.filter(pk=customer.pk), user).first()
     return {
         "id": str(customer.id),
         "name": customer.name,
@@ -89,8 +117,8 @@ def serialize_customer(customer, user=None):
         "archived_at": customer.archived_at.isoformat() if customer.archived_at else None,
         "external_source": customer.external_source,
         "external_id": customer.external_id,
-        "customer_request_count": customer.requests.count(),
-        "work_item_count": issues.values("issue_id").distinct().count(),
+        "customer_request_count": customer.request_count,
+        "work_item_count": customer.visible_item_count,
         "workspace": str(customer.workspace_id),
         "created_at": customer.created_at.isoformat(),
         "updated_at": customer.updated_at.isoformat(),

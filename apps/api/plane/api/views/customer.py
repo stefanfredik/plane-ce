@@ -37,7 +37,8 @@ class CustomerListCreateAPIEndpoint(BaseAPIView):
     def get(self, request, slug):
         if not _member(request.user, slug):
             return _forbidden()
-        customers = Customer.objects.filter(workspace__slug=slug, archived_at__isnull=True).order_by("name")
+        customers = Customer.objects.filter(workspace__slug=slug, archived_at__isnull=True)
+        customers = svc.with_counts(customers, request.user).order_by("name")
         return Response([svc.serialize_customer(c, request.user) for c in customers])
 
     def post(self, request, slug):

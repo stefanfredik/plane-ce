@@ -34,8 +34,8 @@ export const IssueCustomPropertyChips = observer(function IssueCustomPropertyChi
   const enabled = !!projectId && store.isEnabled(projectId);
 
   useEffect(() => {
-    if (enabled && workspaceSlug && projectId) store.ensureProjectValues(workspaceSlug.toString(), projectId);
-  }, [enabled, store, workspaceSlug, projectId]);
+    if (enabled && workspaceSlug && projectId) store.requestIssueValues(workspaceSlug.toString(), projectId, issue.id);
+  }, [enabled, store, workspaceSlug, projectId, issue.id]);
 
   if (!enabled) return null;
   const values = store.issueValues[issue.id];

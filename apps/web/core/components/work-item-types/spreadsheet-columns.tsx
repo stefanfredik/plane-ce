@@ -43,7 +43,6 @@ export const SpreadsheetCustomPropertyHeaders = observer(function SpreadsheetCus
   useEffect(() => {
     if (!workspaceSlug || !project) return;
     void store.fetchProjectTypes(workspaceSlug.toString(), project);
-    void store.fetchProjectValues(workspaceSlug.toString(), project);
   }, [store, workspaceSlug, project]);
 
   return (
@@ -75,7 +74,15 @@ export const SpreadsheetCustomPropertyCells = observer(function SpreadsheetCusto
   const { workspaceSlug, projectId } = useParams();
   const store = useWorkItemType();
   const columns = useCustomColumns(projectId?.toString(), displayProperties);
-  if (columns.length === 0) return null;
+  const hasColumns = columns.length > 0;
+
+  // rows render only while visible, so this loads the values of the items on screen
+  useEffect(() => {
+    if (hasColumns && workspaceSlug && issue.project_id)
+      store.requestIssueValues(workspaceSlug.toString(), issue.project_id, issue.id);
+  }, [hasColumns, store, workspaceSlug, issue.project_id, issue.id]);
+
+  if (!hasColumns) return null;
 
   const values = store.issueValues[issue.id] ?? {};
   const save = (propertyId: string, next: string[]) =>

@@ -41,7 +41,8 @@ class CustomerEndpoint(BaseAPIView):
             customers = customers.filter(
                 Q(name__icontains=search) | Q(domain__icontains=search) | Q(email__icontains=search)
             )
-        return Response([svc.serialize_customer(c, request.user) for c in customers.order_by("name")])
+        customers = svc.with_counts(customers, request.user).order_by("name")
+        return Response([svc.serialize_customer(c, request.user) for c in customers])
 
     @allow_permission(MEMBERS, level="WORKSPACE")
     def post(self, request, slug):

@@ -18,6 +18,7 @@ properties carry at most one item; an empty list clears the property.
 
 # Python imports
 import json
+from collections import defaultdict
 import re
 import time
 from datetime import date
@@ -252,8 +253,40 @@ def serialize_option(option: IssuePropertyOption):
     }
 
 
-def serialize_property(prop: IssueProperty, issue_type_id=None):
-    type_ids = property_type_ids(prop)
+class _Batch:
+    """Links, usage and options of many properties loaded at once (lists stay at a fixed number of queries)."""
+
+    def __init__(self, type_ids=None, properties=None):
+        self.by_type = defaultdict(list)
+        if type_ids is not None:
+            links = (
+                IssueTypeProperty.objects.filter(issue_type_id__in=type_ids, property__deleted_at__isnull=True)
+                .select_related("property")
+                .order_by("sort_order", "created_at")
+            )
+            for link in links:
+                self.by_type[link.issue_type_id].append(link.property)
+            properties = [p for props in self.by_type.values() for p in props]
+        prop_ids = {p.id for p in properties or []}
+        self.usage = defaultdict(list)
+        for type_id, prop_id in IssueTypeProperty.objects.filter(property_id__in=prop_ids).values_list(
+            "issue_type_id", "property_id"
+        ):
+            self.usage[prop_id].append(str(type_id))
+        self.options = defaultdict(list)
+        for option in IssuePropertyOption.objects.filter(property_id__in=prop_ids).order_by("sort_order", "created_at"):
+            self.options[option.property_id].append(option)
+        self.projects = defaultdict(list)
+        if type_ids is not None:
+            for type_id, project_id in ProjectIssueType.objects.filter(
+                issue_type_id__in=type_ids, deleted_at__isnull=True
+            ).values_list("issue_type_id", "project_id"):
+                self.projects[type_id].append(str(project_id))
+
+
+def serialize_property(prop: IssueProperty, issue_type_id=None, batch=None):
+    type_ids = batch.usage.get(prop.id, []) if batch else property_type_ids(prop)
+    options = batch.options.get(prop.id, []) if batch else [o for o in prop.options.all() if o.deleted_at is None]
     return {
         "id": str(prop.id),
         # the type this property was listed under (when serialised as part of a type)
@@ -270,12 +303,19 @@ def serialize_property(prop: IssueProperty, issue_type_id=None):
         "default_value": prop.default_value or [],
         "settings": prop.settings or {},
         "logo_props": prop.logo_props or {},
-        "options": [serialize_option(o) for o in prop.options.all() if o.deleted_at is None],
+        "options": [serialize_option(o) for o in options],
     }
 
 
-def serialize_issue_type(issue_type: IssueType, project_id, issue_count=None):
-    props = type_properties(issue_type.id)
+def serialize_properties(props):
+    props = list(props)
+    batch = _Batch(properties=props)
+    return [serialize_property(p, batch=batch) for p in props]
+
+
+def serialize_issue_type(issue_type: IssueType, project_id, issue_count=None, batch=None):
+    batch = batch or _Batch(type_ids=[issue_type.id])
+    props = batch.by_type.get(issue_type.id, [])
     data = {
         "id": str(issue_type.id),
         "name": issue_type.name,
@@ -284,8 +324,8 @@ def serialize_issue_type(issue_type: IssueType, project_id, issue_count=None):
         "is_default": issue_type.is_default,
         "is_active": issue_type.is_active,
         "project_id": str(project_id),
-        "project_ids": [str(pid) for pid in type_project_ids(issue_type)],
-        "properties": [serialize_property(p, issue_type.id) for p in props],
+        "project_ids": batch.projects.get(issue_type.id, []),
+        "properties": [serialize_property(p, issue_type.id, batch) for p in props],
     }
     if issue_count is not None:
         data["issue_count"] = issue_count
@@ -298,7 +338,9 @@ def serialize_project_issue_types(project_id):
         row["type_id"]: row["n"]
         for row in Issue.issue_objects.filter(project_id=project_id).values("type_id").annotate(n=Count("id"))
     }
-    return [serialize_issue_type(t, project_id, counts.get(t.id, 0)) for t in types]
+    types = list(types)
+    batch = _Batch(type_ids=[t.id for t in types])
+    return [serialize_issue_type(t, project_id, counts.get(t.id, 0), batch) for t in types]
 
 
 # ---------------------------------------------------------------------------
@@ -877,17 +919,53 @@ def apply_default_values(issue: Issue, actor, provided):
     return merged
 
 
+VALUE_COLUMNS = (
+    "value_text",
+    "value_number",
+    "value_boolean",
+    "value_date",
+    "value_option_id",
+    "value_member_id",
+    "value_asset_id",
+    "value_issue_id",
+)
+
+
+def _raw_value(ptype, text, number, boolean, day, option, member, asset, issue):
+    """Like _row_value, for rows read with values_list (no model instances)."""
+    if ptype in TEXT_COLUMN_TYPES:
+        return text
+    if ptype in (IssuePropertyType.NUMBER, IssuePropertyType.FORMULA):
+        return None if number is None else format(number.normalize(), "f")
+    if ptype == IssuePropertyType.BOOLEAN:
+        return None if boolean is None else ("true" if boolean else "false")
+    if ptype == IssuePropertyType.DATE:
+        return None if day is None else day.isoformat()
+    if ptype in OPTION_TYPES:
+        return None if option is None else str(option)
+    if ptype == IssuePropertyType.MEMBER:
+        return None if member is None else str(member)
+    if ptype == IssuePropertyType.FILE:
+        return None if asset is None else str(asset)
+    if ptype == IssuePropertyType.RELATION:
+        return None if issue is None else str(issue)
+    return None
+
+
 def project_property_values(project_id, issue_ids=None):
-    """Values of every work item in a project: issue id -> property id -> list of strings."""
-    rows = IssuePropertyValue.objects.filter(project_id=project_id, issue__deleted_at__isnull=True).select_related(
-        "property"
-    )
-    if issue_ids:
+    """Values of a project's work items: issue id -> property id -> list of strings.
+
+    Lists ask for the items on screen (``issue_ids``); without it every item of the project is read.
+    """
+    rows = IssuePropertyValue.objects.filter(project_id=project_id, issue__deleted_at__isnull=True)
+    if issue_ids is not None:
         rows = rows.filter(issue_id__in=issue_ids)
     result = {}
-    for row in rows.order_by("created_at"):
-        value = _row_value(row, row.property.property_type)
+    for issue_id, property_id, ptype, *columns in rows.order_by("created_at").values_list(
+        "issue_id", "property_id", "property__property_type", *VALUE_COLUMNS
+    ):
+        value = _raw_value(ptype, *columns)
         if value is None:
             continue
-        result.setdefault(str(row.issue_id), {}).setdefault(str(row.property_id), []).append(value)
+        result.setdefault(str(issue_id), {}).setdefault(str(property_id), []).append(value)
     return result

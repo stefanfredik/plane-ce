@@ -64,6 +64,7 @@ export class CustomerStore implements ICustomerStore {
   workItems: Record<string, TCustomerWorkItem[] | undefined> = {};
   issueCustomers: Record<string, TIssueCustomer[] | undefined> = {};
   private service = new CustomerService();
+  private inflight: Record<string, Promise<TCustomer[]> | undefined> = {};
 
   constructor() {
     makeObservable(this, {
@@ -94,7 +95,12 @@ export class CustomerStore implements ICustomerStore {
   }
 
   fetchCustomers = async (workspaceSlug: string, params?: { search?: string; archived?: boolean }) => {
-    const customers = await this.service.list(workspaceSlug, params);
+    // components that mount together share one request for the same list
+    const key = `${workspaceSlug}|${params?.search ?? ""}|${params?.archived ? 1 : 0}`;
+    const request = (this.inflight[key] ??= this.service.list(workspaceSlug, params).finally(() => {
+      delete this.inflight[key];
+    }));
+    const customers = await request;
     runInAction(() => {
       this.customers = customers;
     });

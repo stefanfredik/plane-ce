@@ -232,8 +232,13 @@ export class WorkItemTypeService extends APIService {
     );
   }
 
-  getProjectValues(workspaceSlug: string, projectId: string) {
-    return this.unwrap<TProjectPropertyValues>(this.get(`${this.base(workspaceSlug, projectId)}/property-values/`));
+  /** Values of the given work items (at most 200 per call), or of the whole project without ids. */
+  getProjectValues(workspaceSlug: string, projectId: string, issueIds?: string[]) {
+    return this.unwrap<TProjectPropertyValues>(
+      this.get(`${this.base(workspaceSlug, projectId)}/property-values/`, {
+        params: issueIds ? { issue_ids: issueIds.join(",") } : undefined,
+      })
+    );
   }
 
   getRelationDetails(workspaceSlug: string, projectId: string, ids: string[]) {

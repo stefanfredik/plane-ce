@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+# Python imports
+import uuid
+
 # Third Party imports
 from rest_framework import status
 from rest_framework.response import Response
@@ -11,6 +14,10 @@ from plane.app.permissions import ROLE, allow_permission
 from plane.app.views.base import BaseAPIView
 from plane.db.models import Issue, Project, Workspace
 from plane.utils import work_item_types as wit
+
+
+# Lists load property values for the work items on screen, in batches of at most this many.
+MAX_VALUE_BATCH = 200
 
 
 def _issue_type_or_404(project_id, type_id):
@@ -161,8 +168,8 @@ class ProjectPropertyPoolEndpoint(BaseAPIView):
 
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
     def get(self, request, slug, project_id):
-        props = wit.project_properties(project_id).prefetch_related("options").order_by("sort_order", "created_at")
-        return Response([wit.serialize_property(p) for p in props])
+        props = wit.project_properties(project_id).order_by("sort_order", "created_at")
+        return Response(wit.serialize_properties(props))
 
     @allow_permission([ROLE.ADMIN])
     def post(self, request, slug, project_id):
@@ -276,7 +283,15 @@ class ProjectPropertyValuesEndpoint(BaseAPIView):
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
     def get(self, request, slug, project_id):
         raw_ids = request.GET.get("issue_ids")
-        issue_ids = [i for i in raw_ids.split(",") if i] if raw_ids else None
+        issue_ids = None
+        if raw_ids is not None:
+            issue_ids = [i for i in raw_ids.split(",") if i]
+            if len(issue_ids) > MAX_VALUE_BATCH:
+                return _bad_request({"issue_ids": f"Ask for at most {MAX_VALUE_BATCH} work items at a time."})
+            try:
+                issue_ids = [str(uuid.UUID(i)) for i in issue_ids]
+            except ValueError:
+                return _bad_request({"issue_ids": "Work item ids must be UUIDs."})
         return Response(wit.project_property_values(project_id, issue_ids))
 
 

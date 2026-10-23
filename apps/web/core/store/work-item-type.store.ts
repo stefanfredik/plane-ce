@@ -17,6 +17,9 @@ import type {
 import { WorkItemTypeService } from "@/services/work-item-type.service";
 import type { CoreRootStore } from "./root.store";
 
+/** Work items per property-values request (the server accepts up to 200). */
+const VALUE_BATCH_SIZE = 100;
+
 export type TPropertyColumn = { property: TWorkItemProperty; typeIds: string[] };
 
 export interface IWorkItemTypeStore {
@@ -87,9 +90,11 @@ export interface IWorkItemTypeStore {
     typeIds: string[]
   ) => Promise<{ imported: string[]; skipped: string[] }>;
   bulkAssign: (workspaceSlug: string, projectId: string, typeId: string, issueIds: string[]) => Promise<number>;
-  fetchProjectValues: (workspaceSlug: string, projectId: string) => Promise<void>;
-  /** Load a project's values once per session (cards share it); saves keep it current. */
-  ensureProjectValues: (workspaceSlug: string, projectId: string) => void;
+  /**
+   * Ask for one work item's values; requests made while rendering a list are sent together,
+   * a page at a time, so only the items on screen are loaded.
+   */
+  requestIssueValues: (workspaceSlug: string, projectId: string, issueId: string) => void;
 }
 
 export class WorkItemTypeStore implements IWorkItemTypeStore {
@@ -99,7 +104,10 @@ export class WorkItemTypeStore implements IWorkItemTypeStore {
   projectProperties: Record<string, TWorkItemProperty[] | undefined> = {};
   private service = new WorkItemTypeService();
   private inflight: Record<string, Promise<TProjectWorkItemTypes> | undefined> = {};
+  /** Work items whose values were asked for (loaded or on their way). */
   private valuesRequested = new Set<string>();
+  private pendingValues: Record<string, Set<string>> = {};
+  private flushTimers: Record<string, ReturnType<typeof setTimeout> | undefined> = {};
 
   constructor(private rootStore?: CoreRootStore) {
     makeObservable(this, {
@@ -115,7 +123,6 @@ export class WorkItemTypeStore implements IWorkItemTypeStore {
       fetchWorkspaceTypes: action,
       importTypes: action,
       bulkAssign: action,
-      fetchProjectValues: action,
       fetchProjectTypes: action,
       enable: action,
       createType: action,
@@ -310,13 +317,6 @@ export class WorkItemTypeStore implements IWorkItemTypeStore {
   };
 
   /** Values of every work item in the project, merged into the per-issue cache (for list columns). */
-  fetchProjectValues = async (workspaceSlug: string, projectId: string) => {
-    const values = await this.service.getProjectValues(workspaceSlug, projectId);
-    runInAction(() => {
-      for (const [issueId, issueValues] of Object.entries(values)) this.issueValues[issueId] = issueValues;
-    });
-  };
-
   /** A list grouped by one of these properties regroups on the server, so reload it. */
   private refreshGroupedList = (workspaceSlug: string, projectId: string, propertyIds: string[]) => {
     const issueRoot = this.rootStore?.issue;
@@ -326,9 +326,31 @@ export class WorkItemTypeStore implements IWorkItemTypeStore {
     void issueRoot.projectIssues.fetchIssuesWithExistingPagination(workspaceSlug, projectId, "mutation");
   };
 
-  ensureProjectValues = (workspaceSlug: string, projectId: string) => {
-    if (this.valuesRequested.has(projectId)) return;
-    this.valuesRequested.add(projectId);
-    void this.fetchProjectValues(workspaceSlug, projectId).catch(() => this.valuesRequested.delete(projectId));
+  requestIssueValues = (workspaceSlug: string, projectId: string, issueId: string) => {
+    if (this.issueValues[issueId] !== undefined || this.valuesRequested.has(issueId)) return;
+    this.valuesRequested.add(issueId);
+    (this.pendingValues[projectId] ??= new Set()).add(issueId);
+    if (this.flushTimers[projectId]) return;
+    // wait a tick so every row rendered in the same pass joins one request
+    this.flushTimers[projectId] = setTimeout(() => void this.flushValueRequests(workspaceSlug, projectId), 30);
+  };
+
+  private flushValueRequests = async (workspaceSlug: string, projectId: string) => {
+    this.flushTimers[projectId] = undefined;
+    const ids = [...(this.pendingValues[projectId] ?? [])];
+    this.pendingValues[projectId]?.clear();
+    for (let start = 0; start < ids.length; start += VALUE_BATCH_SIZE) {
+      const batch = ids.slice(start, start + VALUE_BATCH_SIZE);
+      try {
+        // oxlint-disable-next-line no-await-in-loop -- batches go one after another to keep the server load even
+        const values = await this.service.getProjectValues(workspaceSlug, projectId, batch);
+        runInAction(() => {
+          // items without values are remembered as empty so they are not asked for again
+          for (const id of batch) this.issueValues[id] = values[id] ?? {};
+        });
+      } catch {
+        for (const id of batch) this.valuesRequested.delete(id);
+      }
+    }
   };
 }

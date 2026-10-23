@@ -814,3 +814,38 @@ class TestPropertyPool:
 
         assert [p["display_name"] for p in types["Bug"]["properties"]] == ["B", "A"]
         assert [p["display_name"] for p in types["Feature"]["properties"]] == ["A", "B"]
+
+
+@pytest.mark.contract
+class TestValueBatches:
+    """Lists load property values for the work items on screen only."""
+
+    def test_only_requested_items_are_returned(self, session_client, workspace, project, bug_type):
+        prop = add_property(
+            session_client, workspace, project, bug_type["id"], display_name="Module", property_type="TEXT"
+        ).data
+        ids = []
+        for name in ("a", "b"):
+            issue = session_client.post(
+                url(workspace, project, "issues/"), {"name": name, "type_id": bug_type["id"]}, format="json"
+            ).data
+            session_client.put(
+                url(workspace, project, f"issues/{issue['id']}/property-values/"),
+                {"values": {prop["id"]: [name.upper()]}},
+                format="json",
+            )
+            ids.append(str(issue["id"]))
+
+        response = session_client.get(url(workspace, project, "property-values/"), {"issue_ids": ids[0]})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == {ids[0]: {prop["id"]: ["A"]}}
+
+    def test_bad_or_too_many_ids_are_refused(self, session_client, workspace, project, enabled):
+        values_url = url(workspace, project, "property-values/")
+
+        bad = session_client.get(values_url, {"issue_ids": "not-a-uuid"})
+        too_many = session_client.get(values_url, {"issue_ids": ",".join(str(uuid4()) for _ in range(201))})
+
+        assert bad.status_code == status.HTTP_400_BAD_REQUEST
+        assert too_many.status_code == status.HTTP_400_BAD_REQUEST

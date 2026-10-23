@@ -192,7 +192,14 @@ class IssuePropertyValue(ProjectBaseModel):
     )
 
     class Meta:
-        indexes = [models.Index(fields=["issue", "property"], name="issue_prop_val_issue_prop_idx")]
+        indexes = [
+            models.Index(fields=["issue", "property"], name="issue_prop_val_issue_prop_idx"),
+            # filters, grouping and sorting look values up by property first
+            models.Index(fields=["property", "value_option"], name="issue_prop_val_prop_opt_idx"),
+            models.Index(fields=["property", "value_member"], name="issue_prop_val_prop_member_idx"),
+            models.Index(fields=["property", "value_number"], name="issue_prop_val_prop_num_idx"),
+            models.Index(fields=["property", "value_date"], name="issue_prop_val_prop_date_idx"),
+        ]
         verbose_name = "Issue Property Value"
         verbose_name_plural = "Issue Property Values"
         db_table = "issue_property_values"
