@@ -13,6 +13,8 @@ import { ISSUE_FILTER_DEFAULT_DATA } from "@/store/issue/helpers/base-issues.sto
 import { useIssueDetail } from "./store/use-issue-detail";
 import { useIssues } from "./store/use-issues";
 import { useIssuesActions } from "./use-issues-actions";
+import { useWorkItemType } from "./store/use-work-item-type";
+import { errorMessage } from "@/components/work-item-types/constants";
 
 type DNDStoreType =
   | EIssuesStoreType.PROJECT
@@ -34,6 +36,7 @@ export const useGroupIssuesDragNDrop = (
   subGroupBy?: TIssueGroupByOptions
 ) => {
   const { workspaceSlug } = useParams();
+  const workItemTypes = useWorkItemType();
 
   const {
     issue: { getIssueById },
@@ -94,7 +97,21 @@ export const useGroupIssuesDragNDrop = (
       delete data[moduleKey];
     }
 
-    updateIssue && updateIssue(projectId, issueId, data).catch(() => setToast(errorToastProps));
+    // Dropped into another custom property group: store the property value, then move the card.
+    if (data.custom_property_group !== undefined && workspaceSlug && groupBy?.startsWith("customproperty_")) {
+      const propertyId = groupBy.replace("customproperty_", "");
+      const groupValue = data.custom_property_group;
+      try {
+        await workItemTypes.saveIssueValues(workspaceSlug.toString(), projectId, issueId, {
+          [propertyId]: groupValue && groupValue !== "None" ? [groupValue] : [],
+        });
+      } catch (error) {
+        setToast({ ...errorToastProps, message: errorMessage(error, errorToastProps.message) });
+        return;
+      }
+    }
+
+    if (updateIssue) updateIssue(projectId, issueId, data).catch(() => setToast(errorToastProps));
   };
 
   const handleOnDrop = async (source: GroupDropLocation, destination: GroupDropLocation) => {

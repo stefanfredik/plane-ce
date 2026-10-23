@@ -72,6 +72,24 @@ export const coreRoutes: RouteConfigEntry[] = [
           route(":workspaceSlug/analytics/:tabId", "./(all)/[workspaceSlug]/(projects)/analytics/[tabId]/page.tsx"),
         ]),
 
+        // Work item dashboards
+        layout("./(all)/[workspaceSlug]/(projects)/dashboards/layout.tsx", [
+          route(":workspaceSlug/dashboards", "./(all)/[workspaceSlug]/(projects)/dashboards/page.tsx"),
+          route(
+            ":workspaceSlug/dashboards/:dashboardId",
+            "./(all)/[workspaceSlug]/(projects)/dashboards/[dashboardId]/page.tsx"
+          ),
+        ]),
+
+        // Customers
+        layout("./(all)/[workspaceSlug]/(projects)/customers/layout.tsx", [
+          route(":workspaceSlug/customers", "./(all)/[workspaceSlug]/(projects)/customers/page.tsx"),
+          route(
+            ":workspaceSlug/customers/:customerId",
+            "./(all)/[workspaceSlug]/(projects)/customers/[customerId]/page.tsx"
+          ),
+        ]),
+
         // Browse
         layout("./(all)/[workspaceSlug]/(projects)/browse/[workItem]/layout.tsx", [
           route(":workspaceSlug/browse/:workItem", "./(all)/[workspaceSlug]/(projects)/browse/[workItem]/page.tsx"),
@@ -275,6 +293,14 @@ export const coreRoutes: RouteConfigEntry[] = [
             "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/exports/page.tsx"
           ),
           route(
+            ":workspaceSlug/settings/work-item-types",
+            "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/work-item-types/page.tsx"
+          ),
+          route(
+            ":workspaceSlug/settings/customers",
+            "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/customers/page.tsx"
+          ),
+          route(
             ":workspaceSlug/settings/webhooks",
             "./(all)/[workspaceSlug]/(settings)/settings/(workspace)/webhooks/page.tsx"
           ),
@@ -332,6 +358,15 @@ export const coreRoutes: RouteConfigEntry[] = [
             route(
               ":workspaceSlug/settings/projects/:projectId/labels",
               "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/labels/page.tsx"
+            ),
+            // Project Work Item Types
+            route(
+              ":workspaceSlug/settings/projects/:projectId/work-item-types",
+              "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/work-item-types/page.tsx"
+            ),
+            route(
+              ":workspaceSlug/settings/projects/:projectId/work-item-types/:typeId",
+              "./(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/work-item-types/[typeId]/page.tsx"
             ),
             // Project Estimates
             route(

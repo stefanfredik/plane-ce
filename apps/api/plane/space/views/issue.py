@@ -54,6 +54,7 @@ from plane.app.serializers import (
     IssueVoteSerializer,
 )
 from plane.db.models import (
+    IssueView,
     Issue,
     IssueComment,
     IssueLink,
@@ -68,6 +69,12 @@ from plane.db.models import (
 )
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.utils.issue_filters import issue_filters
+from plane.space.utils.published_views import (
+    PUBLISHED_ENTITIES,
+    apply_view_filters,
+    published_project_id,
+    published_view,
+)
 
 
 class ProjectIssuesPublicEndpoint(BaseAPIView):
@@ -77,12 +84,16 @@ class ProjectIssuesPublicEndpoint(BaseAPIView):
         filters = issue_filters(request.query_params, "GET")
         order_by_param = request.GET.get("order_by", "-created_at")
 
-        deploy_board = DeployBoard.objects.filter(anchor=anchor, entity_name="project").first()
+        deploy_board = DeployBoard.objects.filter(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES).first()
         if not deploy_board:
             return Response({"error": "Project is not published"}, status=status.HTTP_404_NOT_FOUND)
 
-        project_id = deploy_board.entity_identifier
+        project_id = published_project_id(deploy_board)
         slug = deploy_board.workspace.slug
+        try:
+            view = published_view(deploy_board)
+        except IssueView.DoesNotExist:
+            return Response({"error": "View is not published"}, status=status.HTTP_404_NOT_FOUND)
 
         issue_queryset = (
             Issue.issue_objects.filter(workspace__slug=slug, project_id=project_id)
@@ -124,6 +135,8 @@ class ProjectIssuesPublicEndpoint(BaseAPIView):
         ).distinct()
 
         issue_queryset = issue_queryset.filter(**filters)
+        # A published view shows only what the view itself shows
+        issue_queryset = apply_view_filters(request, issue_queryset, view)
 
         # Issue queryset
         issue_queryset, order_by_param = order_issue_queryset(
@@ -227,7 +240,9 @@ class IssueCommentPublicViewSet(BaseViewSet):
 
     def get_queryset(self):
         try:
-            project_deploy_board = DeployBoard.objects.get(anchor=self.kwargs.get("anchor"), entity_name="project")
+            project_deploy_board = DeployBoard.objects.get(
+                anchor=self.kwargs.get("anchor"), entity_name__in=PUBLISHED_ENTITIES
+            )
             if project_deploy_board.is_comments_enabled:
                 return self.filter_queryset(
                     super()
@@ -255,7 +270,7 @@ class IssueCommentPublicViewSet(BaseViewSet):
             return IssueComment.objects.none()
 
     def create(self, request, anchor, issue_id):
-        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name="project")
+        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES)
 
         if not project_deploy_board.is_comments_enabled:
             return Response(
@@ -294,7 +309,7 @@ class IssueCommentPublicViewSet(BaseViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def partial_update(self, request, anchor, issue_id, pk):
-        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name="project")
+        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES)
 
         if not project_deploy_board.is_comments_enabled:
             return Response(
@@ -318,7 +333,7 @@ class IssueCommentPublicViewSet(BaseViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, anchor, issue_id, pk):
-        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name="project")
+        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES)
 
         if not project_deploy_board.is_comments_enabled:
             return Response(
@@ -364,7 +379,7 @@ class IssueReactionPublicViewSet(BaseViewSet):
             return IssueReaction.objects.none()
 
     def create(self, request, anchor, issue_id):
-        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name="project")
+        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES)
 
         if not project_deploy_board.is_reactions_enabled:
             return Response(
@@ -401,7 +416,7 @@ class IssueReactionPublicViewSet(BaseViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, anchor, issue_id, reaction_code):
-        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name="project")
+        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES)
 
         if not project_deploy_board.is_reactions_enabled:
             return Response(
@@ -433,7 +448,9 @@ class CommentReactionPublicViewSet(BaseViewSet):
 
     def get_queryset(self):
         try:
-            project_deploy_board = DeployBoard.objects.get(anchor=self.kwargs.get("anchor"), entity_name="project")
+            project_deploy_board = DeployBoard.objects.get(
+                anchor=self.kwargs.get("anchor"), entity_name__in=PUBLISHED_ENTITIES
+            )
             if project_deploy_board.is_reactions_enabled:
                 return (
                     super()
@@ -449,7 +466,7 @@ class CommentReactionPublicViewSet(BaseViewSet):
             return CommentReaction.objects.none()
 
     def create(self, request, anchor, comment_id):
-        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name="project")
+        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES)
 
         if not project_deploy_board.is_reactions_enabled:
             return Response(
@@ -486,7 +503,7 @@ class CommentReactionPublicViewSet(BaseViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, anchor, comment_id, reaction_code):
-        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name="project")
+        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES)
         if not project_deploy_board.is_reactions_enabled:
             return Response(
                 {"error": "Reactions are not enabled for this board"},
@@ -525,8 +542,9 @@ class IssueVotePublicViewSet(BaseViewSet):
 
     def get_queryset(self):
         try:
+            # Looked up by anchor (upstream used the workspace slug here, which never matched)
             project_deploy_board = DeployBoard.objects.get(
-                workspace__slug=self.kwargs.get("anchor"), entity_name="project"
+                anchor=self.kwargs.get("anchor"), entity_name__in=PUBLISHED_ENTITIES
             )
             if project_deploy_board.is_votes_enabled:
                 return (
@@ -541,7 +559,7 @@ class IssueVotePublicViewSet(BaseViewSet):
             return IssueVote.objects.none()
 
     def create(self, request, anchor, issue_id):
-        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name="project")
+        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES)
         issue_vote, _ = IssueVote.objects.get_or_create(
             actor_id=request.user.id,
             project_id=project_deploy_board.project_id,
@@ -571,7 +589,7 @@ class IssueVotePublicViewSet(BaseViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, anchor, issue_id):
-        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name="project")
+        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES)
         issue_vote = IssueVote.objects.get(
             issue_id=issue_id,
             actor_id=request.user.id,
@@ -596,12 +614,21 @@ class IssueRetrievePublicEndpoint(BaseAPIView):
 
     def get(self, request, anchor, issue_id):
         deploy_board = DeployBoard.objects.get(anchor=anchor)
+        try:
+            view = published_view(deploy_board)
+        except IssueView.DoesNotExist:
+            return Response({"error": "View is not published"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Through a published view, only the view's own work items can be opened
+        visible = apply_view_filters(
+            request, Issue.issue_objects.filter(project_id=deploy_board.project_id), view
+        ).values("id")
         issue_queryset = (
             Issue.issue_objects.filter(
                 pk=issue_id,
                 workspace__slug=deploy_board.workspace.slug,
                 project_id=deploy_board.project_id,
+                id__in=visible,
             )
             .select_related("workspace", "project", "state", "parent")
             .prefetch_related("assignees", "labels", "issue_module__module")
@@ -770,4 +797,6 @@ class IssueRetrievePublicEndpoint(BaseAPIView):
             )
         ).first()
 
+        if issue_queryset is None:
+            return Response({"error": "Work item not found"}, status=status.HTTP_404_NOT_FOUND)
         return Response(issue_queryset, status=status.HTTP_200_OK)

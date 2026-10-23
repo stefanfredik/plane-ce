@@ -8,7 +8,7 @@ from django.db import models
 from django.db.models import Q
 from django_filters import FilterSet, filters
 
-from plane.db.models import Issue
+from plane.db.models import CustomerIssue, Issue, IssuePropertyValue
 
 
 class UUIDInFilter(filters.BaseInFilter, filters.UUIDFilter):
@@ -150,6 +150,17 @@ class IssueFilterSet(BaseFilterSet):
     label_id = filters.UUIDFilter(method="filter_label_id")
     label_id__in = UUIDInFilter(method="filter_label_id_in", lookup_expr="in")
 
+    # Work item types and custom properties. Option ids are unique per property, so one key
+    # covers "Severity is Critical"; several conditions combine like any other filter.
+    type_id = filters.UUIDFilter(field_name="type_id")
+    type_id__in = UUIDInFilter(field_name="type_id", lookup_expr="in")
+
+    customer_id = filters.UUIDFilter(method="filter_customer_id")
+    customer_id__in = UUIDInFilter(method="filter_customer_id_in", lookup_expr="in")
+
+    property_option_id = filters.UUIDFilter(method="filter_property_option_id")
+    property_option_id__in = UUIDInFilter(method="filter_property_option_id_in", lookup_expr="in")
+
     # Direct field lookups remain the same
     created_by_id = filters.UUIDFilter(field_name="created_by_id")
     created_by_id__in = UUIDInFilter(field_name="created_by_id", lookup_expr="in")
@@ -266,6 +277,25 @@ class IssueFilterSet(BaseFilterSet):
         return Q(
             issue_mention__mention_id__in=value,
             issue_mention__deleted_at__isnull=True,
+        )
+
+    def filter_customer_id(self, queryset, name, value):
+        return self.filter_customer_id_in(queryset, name, [value])
+
+    def filter_customer_id_in(self, queryset, name, value):
+        """Work items linked to any of these customers."""
+        return Q(id__in=CustomerIssue.objects.filter(customer_id__in=value, deleted_at__isnull=True).values("issue_id"))
+
+    def filter_property_option_id(self, queryset, name, value):
+        return self.filter_property_option_id_in(queryset, name, [value])
+
+    def filter_property_option_id_in(self, queryset, name, value):
+        """Work items holding any of these option values (a subquery, so conditions on
+        two different properties do not have to match the same value row)."""
+        return Q(
+            id__in=IssuePropertyValue.objects.filter(value_option_id__in=value, deleted_at__isnull=True).values(
+                "issue_id"
+            )
         )
 
     def filter_label_id(self, queryset, name, value):

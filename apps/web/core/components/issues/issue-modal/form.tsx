@@ -45,6 +45,7 @@ import { useProjectState } from "@/hooks/store/use-project-state";
 import { useWorkspaceDraftIssues } from "@/hooks/store/workspace-draft";
 import { usePlatformOS } from "@/hooks/use-platform-os";
 import { useProjectIssueProperties } from "@/hooks/use-project-issue-properties";
+import { IssueModalCustomProperties, IssueModalTypeSelect } from "@/components/work-item-types/issue-modal-properties";
 
 export interface IssueFormProps {
   data?: Partial<TIssue>;
@@ -362,12 +363,20 @@ export const IssueFormRoot = observer(function IssueFormRoot(props: IssueFormPro
             <div className="rounded-t-lg bg-surface-1 p-5">
               <h3 className="pb-2 text-h4-medium text-secondary">{modalTitle}</h3>
               <div className="flex items-center justify-between pt-2 pb-4">
-                <div className="flex items-center gap-x-1">
+                <div className="flex items-center gap-x-2">
                   <IssueProjectSelect
                     control={control}
                     disabled={!!data?.id || !!data?.sourceIssueId || isProjectSelectionDisabled}
                     handleFormChange={handleFormChange}
                   />
+                  {!isDraft && (
+                    <IssueModalTypeSelect
+                      workspaceSlug={workspaceSlug?.toString()}
+                      projectId={projectId}
+                      typeId={watch("type_id")}
+                      setValue={setValue}
+                    />
+                  )}
                 </div>
               </div>
               {watch("parent_id") && selectedParentIssue && (
@@ -418,6 +427,16 @@ export const IssueFormRoot = observer(function IssueFormRoot(props: IssueFormPro
                   onClose={onClose}
                 />
               </div>
+              {!isDraft && (
+                <div className="px-5">
+                  <IssueModalCustomProperties
+                    workspaceSlug={workspaceSlug?.toString()}
+                    projectId={projectId}
+                    issueId={data?.id}
+                    typeId={watch("type_id")}
+                  />
+                </div>
+              )}
             </div>
             <div
               className={cn(

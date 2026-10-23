@@ -5,15 +5,34 @@
  */
 
 import type { TFilterValue } from "../expression";
+import type { TBaseFilterFieldConfig } from "./shared";
 
 /**
- * Extended filter types
+ * Extended filter types: free text and numbers (used by custom properties).
  */
-export const EXTENDED_FILTER_FIELD_TYPE = {} as const;
+export const EXTENDED_FILTER_FIELD_TYPE = {
+  TEXT: "text",
+  NUMBER: "number",
+} as const;
+
+/** Free text input. */
+export type TTextFilterFieldConfig<V extends TFilterValue> = TBaseFilterFieldConfig & {
+  type: typeof EXTENDED_FILTER_FIELD_TYPE.TEXT;
+  defaultValue?: V;
+  placeholder?: string;
+};
+
+/** Number input. */
+export type TNumberFilterFieldConfig<V extends TFilterValue> = TBaseFilterFieldConfig & {
+  type: typeof EXTENDED_FILTER_FIELD_TYPE.NUMBER;
+  defaultValue?: V;
+};
 
 // -------- UNION TYPES --------
 
 /**
  * All extended filter configurations
  */
-export type TExtendedFilterFieldConfigs<_V extends TFilterValue = TFilterValue> = never;
+export type TExtendedFilterFieldConfigs<V extends TFilterValue = TFilterValue> =
+  | TTextFilterFieldConfig<V>
+  | TNumberFilterFieldConfig<V>;

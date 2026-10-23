@@ -44,7 +44,7 @@ from plane.utils.issue_filters import issue_filters
 from plane.utils.order_queryset import VIEW_ORDER_BY_ALLOWLIST, order_issue_queryset, sanitize_order_by
 from plane.bgtasks.recent_visited_task import recent_visited_task
 from .. import BaseViewSet
-from plane.db.models import UserFavorite
+from plane.db.models import DeployBoard, UserFavorite
 from plane.utils.filters import ComplexFilterBackend
 from plane.utils.filters import IssueFilterSet
 
@@ -288,6 +288,13 @@ class IssueViewViewSet(BaseViewSet):
             .select_related("project")
             .select_related("workspace")
             .annotate(is_favorite=Exists(subquery))
+            .annotate(
+                anchor=Subquery(
+                    DeployBoard.objects.filter(
+                        entity_name="view", entity_identifier=OuterRef("pk"), deleted_at__isnull=True
+                    ).values("anchor")[:1]
+                )
+            )
             .order_by("-is_favorite", "name")
             .distinct()
         )

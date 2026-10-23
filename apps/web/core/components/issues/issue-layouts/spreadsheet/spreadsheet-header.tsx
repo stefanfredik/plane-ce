@@ -16,6 +16,7 @@ import { MultipleSelectGroupAction } from "@/components/core/multiple-select";
 // hooks
 import type { TSelectionHelper } from "@/hooks/use-multiple-select";
 import { SpreadsheetHeaderColumn } from "./spreadsheet-header-column";
+import { SpreadsheetCustomPropertyHeaders } from "@/components/work-item-types/spreadsheet-columns";
 
 interface Props {
   displayProperties: IIssueDisplayProperties;
@@ -87,6 +88,7 @@ export const SpreadsheetHeader = observer(function SpreadsheetHeader(props: Prop
             isEpic={isEpic}
           />
         ))}
+        {!isEpic && <SpreadsheetCustomPropertyHeaders displayProperties={displayProperties} />}
       </tr>
     </thead>
   );

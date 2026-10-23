@@ -12,6 +12,7 @@ import type { TIssueOrderByOptions } from "@plane/types";
 
 // components
 import { FilterHeader, FilterOption } from "@/components/issues/issue-layouts/filters";
+import { useCustomPropertyDisplayOptions } from "@/components/work-item-types/use-custom-display-options";
 
 type Props = {
   selectedOrderBy: TIssueOrderByOptions | undefined;
@@ -27,6 +28,7 @@ export const FilterOrderBy = observer(function FilterOrderBy(props: Props) {
   const [previewEnabled, setPreviewEnabled] = useState(true);
 
   const activeOrderBy = selectedOrderBy ?? "-created_at";
+  const customOrderBy = useCustomPropertyDisplayOptions().orderBy;
 
   return (
     <>
@@ -40,12 +42,22 @@ export const FilterOrderBy = observer(function FilterOrderBy(props: Props) {
           {ISSUE_ORDER_BY_OPTIONS.filter((option) => orderByOptions.includes(option.key)).map((orderBy) => (
             <FilterOption
               key={orderBy?.key}
-              isChecked={activeOrderBy === orderBy?.key ? true : false}
+              isChecked={activeOrderBy === orderBy?.key}
               onClick={() => handleUpdate(orderBy.key)}
               title={t(orderBy.titleTranslationKey)}
               multiple={false}
             />
           ))}
+          {orderByOptions.includes("-created_at") &&
+            customOrderBy.map((option) => (
+              <FilterOption
+                key={option.key}
+                isChecked={activeOrderBy === option.key}
+                onClick={() => handleUpdate(option.key)}
+                title={option.title}
+                multiple={false}
+              />
+            ))}
         </div>
       )}
     </>

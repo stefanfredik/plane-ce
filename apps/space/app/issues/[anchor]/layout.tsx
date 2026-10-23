@@ -24,6 +24,7 @@ const DEFAULT_DESCRIPTION = "Made with Plane, an AI-powered work management plat
 
 interface IssueMetadata {
   name?: string;
+  view?: { name?: string; description?: string } | null;
   description?: string;
   cover_image?: string;
 }
@@ -57,8 +58,9 @@ export async function loader({ params }: Route.LoaderArgs) {
 export function meta({ loaderData }: Route.MetaArgs) {
   const metadata = loaderData?.metadata;
 
-  const title = metadata?.name || DEFAULT_TITLE;
-  const description = metadata?.description || DEFAULT_DESCRIPTION;
+  const view = metadata?.view;
+  const title = (view?.name && metadata?.name ? `${view.name} · ${metadata.name}` : metadata?.name) || DEFAULT_TITLE;
+  const description = view?.description || metadata?.description || DEFAULT_DESCRIPTION;
   const coverImage = metadata?.cover_image;
 
   const metaTags = [

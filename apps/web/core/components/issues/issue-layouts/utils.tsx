@@ -154,6 +154,10 @@ export const getGroupByColumns = ({
     team_project: getTeamProjectColumns,
   };
 
+  // Custom property groups come from the property's options, members or yes/no
+  if ((groupBy as string).startsWith("customproperty_"))
+    return getCustomPropertyColumns((groupBy as string).replace("customproperty_", ""), projectId);
+
   // Get and return the columns for the specified group by option
   return groupByColumnMap[groupBy]?.({ isWorkspaceLevel, projectId });
 };
@@ -297,6 +301,62 @@ const getLabelsColumns = ({ isWorkspaceLevel }: TGetColumns): IGroupByColumn[] =
     ),
     payload: label?.id === "None" ? {} : { label_ids: [label.id] },
   }));
+};
+
+const groupDot = (color?: string) => (
+  <span className="size-2 rounded-full" style={{ backgroundColor: color || "#9ca3af" }} />
+);
+
+const getCustomPropertyColumns = (propertyId: string, scopeProjectId?: string): IGroupByColumn[] | undefined => {
+  // Board and list roots do not pass the project; custom properties only group project pages.
+  const projectId = scopeProjectId ?? store.router.projectId;
+  if (!projectId) return undefined;
+  const property = store.workItemType
+    .getProjectTypes(projectId)
+    .flatMap((type) => type.properties)
+    .find((p) => p.id === propertyId);
+  if (!property) return undefined;
+  const none: IGroupByColumn = { id: "None", name: "None", icon: groupDot(), payload: {} };
+
+  if (property.property_type === "BOOLEAN")
+    return [
+      { id: "true", name: "Yes", icon: groupDot("#16a34a"), payload: {} },
+      { id: "false", name: "No", icon: groupDot(), payload: {} },
+    ];
+  if (property.property_type === "MEMBER") {
+    const { getUserDetails } = store.memberRoot;
+    const memberIds = store.memberRoot.project.getProjectMemberIds(projectId, false) ?? [];
+    return [
+      ...memberIds.flatMap((memberId) => {
+        const member = getUserDetails(memberId);
+        return member
+          ? [
+              {
+                id: memberId,
+                name: member.display_name || "",
+                icon: <Avatar name={member.display_name} src={getFileURL(member.avatar_url ?? "")} size="md" />,
+                payload: {},
+              },
+            ]
+          : [];
+      }),
+      none,
+    ];
+  }
+  // dropdown and cascading: leaf options, labelled with their parent for cascading
+  const leaves = property.options.filter((o) => o.id && !property.options.some((c) => c.parent_id === o.id));
+  return [
+    ...leaves.map((option) => {
+      const parent = option.parent_id ? property.options.find((o) => o.id === option.parent_id) : undefined;
+      return {
+        id: option.id as string,
+        name: parent ? `${parent.name} › ${option.name}` : option.name,
+        icon: groupDot(option.color),
+        payload: {},
+      };
+    }),
+    none,
+  ];
 };
 
 const getAssigneeColumns = ({ isWorkspaceLevel, projectId }: TGetColumns): IGroupByColumn[] | undefined => {
@@ -573,8 +633,17 @@ export const handleGroupDragDrop = async (
   };
 
   // update updatedIssue values based on the source and destination groupIds
-  if (source.groupId && destination.groupId && source.groupId !== destination.groupId && groupBy) {
-    const groupKey = ISSUE_FILTER_DEFAULT_DATA[groupBy];
+  if (
+    source.groupId &&
+    destination.groupId &&
+    source.groupId !== destination.groupId &&
+    groupBy &&
+    groupBy.startsWith("customproperty_")
+  ) {
+    // Custom property group: the drop handler saves the value; this moves the card locally.
+    updatedIssue = { ...updatedIssue, custom_property_group: destination.groupId };
+  } else if (source.groupId && destination.groupId && source.groupId !== destination.groupId && groupBy) {
+    const groupKey = ISSUE_FILTER_DEFAULT_DATA[groupBy as keyof typeof ISSUE_FILTER_DEFAULT_DATA];
     let groupValue: any = clone(sourceIssue[groupKey]);
 
     // If groupValues is an array, remove source groupId and add destination groupId

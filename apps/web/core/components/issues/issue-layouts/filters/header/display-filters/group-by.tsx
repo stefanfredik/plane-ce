@@ -12,6 +12,7 @@ import type { IIssueDisplayFilterOptions, TIssueGroupByOptions } from "@plane/ty
 import { useGroupByOptions } from "../../../utils";
 // components
 import { FilterHeader, FilterOption } from "@/components/issues/issue-layouts/filters";
+import { useCustomPropertyDisplayOptions } from "@/components/work-item-types/use-custom-display-options";
 
 type Props = {
   displayFilters: IIssueDisplayFilterOptions | undefined;
@@ -30,6 +31,9 @@ export const FilterGroupBy = observer(function FilterGroupBy(props: Props) {
   const selectedSubGroupBy = displayFilters?.sub_group_by ?? null;
 
   const options = useGroupByOptions(groupByOptions);
+  // Custom properties join the choices wherever grouping by state is offered (project lists and boards).
+  const customOptions = useCustomPropertyDisplayOptions().groupBy;
+  const showCustomOptions = groupByOptions.includes("state");
 
   return (
     <>
@@ -59,6 +63,16 @@ export const FilterGroupBy = observer(function FilterGroupBy(props: Props) {
               />
             );
           })}
+          {showCustomOptions &&
+            customOptions.map((option) => (
+              <FilterOption
+                key={option.key}
+                isChecked={selectedGroupBy === option.key}
+                onClick={() => handleUpdate(option.key)}
+                title={option.title}
+                multiple={false}
+              />
+            ))}
         </div>
       )}
     </>

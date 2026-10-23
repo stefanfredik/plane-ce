@@ -62,6 +62,7 @@ from plane.db.models import (
     UserRecentVisit,
 )
 from plane.utils.filters import ComplexFilterBackend, IssueFilterSet
+from plane.utils.filters.custom_property import custom_property_grouping
 from plane.utils.global_paginator import paginate
 from plane.utils.grouper import (
     issue_group_values,
@@ -176,6 +177,7 @@ class IssueListEndpoint(BaseAPIView):
                 "id",
                 "name",
                 "state_id",
+                "type_id",
                 "sort_order",
                 "completed_at",
                 "estimate_point",
@@ -290,12 +292,25 @@ class IssueViewSet(BaseViewSet):
 
         # Issue queryset
         issue_queryset, order_by_param = order_issue_queryset(
-            issue_queryset=issue_queryset, order_by_param=order_by_param
+            issue_queryset=issue_queryset, order_by_param=order_by_param, project_id=project_id
         )
 
         # Group by
         group_by = request.GET.get("group_by", False)
         sub_group_by = request.GET.get("sub_group_by", False)
+
+        # Grouping by a custom property: annotate its value and use the property's options as groups
+        custom_grouping = custom_property_grouping(project_id, group_by) if group_by else None
+        custom_group_keys = None
+        if custom_grouping is not None:
+            annotation, group_by, custom_group_keys = custom_grouping
+            issue_queryset = issue_queryset.annotate(**annotation)
+            filtered_issue_queryset = filtered_issue_queryset.annotate(**annotation)
+            sub_group_by = False
+        elif str(group_by).startswith("customproperty_"):
+            group_by = False
+        if str(sub_group_by).startswith("customproperty_"):
+            sub_group_by = False
 
         # issue queryset
         issue_queryset = issue_queryset_grouper(queryset=issue_queryset, group_by=group_by, sub_group_by=sub_group_by)
@@ -375,7 +390,9 @@ class IssueViewSet(BaseViewSet):
                         group_by=group_by, issues=issues, sub_group_by=sub_group_by
                     ),
                     paginator_cls=GroupedOffsetPaginator,
-                    group_by_fields=issue_group_values(
+                    group_by_fields=custom_group_keys
+                    if custom_group_keys is not None
+                    else issue_group_values(
                         field=group_by,
                         slug=slug,
                         project_id=project_id,
@@ -441,6 +458,7 @@ class IssueViewSet(BaseViewSet):
                     "id",
                     "name",
                     "state_id",
+                    "type_id",
                     "sort_order",
                     "completed_at",
                     "estimate_point",
@@ -744,21 +762,11 @@ class ProjectUserDisplayPropertyEndpoint(BaseAPIView):
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
     def patch(self, request, slug, project_id):
         try:
-            issue_property = ProjectUserProperty.objects.get(
-                user=request.user, 
-                project_id=project_id
-            )
+            issue_property = ProjectUserProperty.objects.get(user=request.user, project_id=project_id)
         except ProjectUserProperty.DoesNotExist:
-            issue_property = ProjectUserProperty.objects.create(
-                user=request.user, 
-                project_id=project_id
-            )
+            issue_property = ProjectUserProperty.objects.create(user=request.user, project_id=project_id)
 
-        serializer = ProjectUserPropertySerializer(
-            issue_property, 
-            data=request.data,
-            partial=True
-        )
+        serializer = ProjectUserPropertySerializer(issue_property, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -872,6 +880,7 @@ class IssuePaginatedViewSet(BaseViewSet):
             "id",
             "name",
             "state_id",
+            "type_id",
             "state__group",
             "sort_order",
             "completed_at",
@@ -1097,9 +1106,9 @@ class IssueDetailEndpoint(BaseAPIView):
             order_by=order_by_param,
             queryset=issue,
             total_count_queryset=total_issue_queryset,
-            on_results=lambda issue: IssueListDetailSerializer(
-                issue, many=True, fields=self.fields, expand=self.expand
-            ).data,
+            on_results=lambda issue: (
+                IssueListDetailSerializer(issue, many=True, fields=self.fields, expand=self.expand).data
+            ),
         )
 
 

@@ -79,7 +79,16 @@ from .workspace import (
 
 from .favorite import UserFavorite
 
-from .issue_type import IssueType
+from .issue_type import (
+    IssueType,
+    ProjectIssueType,
+    IssueProperty,
+    IssueTypeProperty,
+    IssuePropertyOption,
+    IssuePropertyType,
+    IssuePropertyValue,
+    MULTI_VALUE_PROPERTY_TYPES,
+)
 
 from .recent_visit import UserRecentVisit
 
@@ -90,3 +99,12 @@ from .device import Device, DeviceSession
 from .sticky import Sticky
 
 from .description import Description, DescriptionVersion
+from .work_item_dashboard import WorkItemDashboard, WorkItemDashboardWidget
+from .customer import (
+    Customer,
+    CustomerIssue,
+    CustomerProperty,
+    CustomerPropertyOption,
+    CustomerPropertyValue,
+    CustomerRequest,
+)

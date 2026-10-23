@@ -25,6 +25,7 @@ import { DateRangeFilterValueInput } from "./date/range";
 import { SingleDateFilterValueInput } from "./date/single";
 import { MultiSelectFilterValueInput } from "./select/multi";
 import { SingleSelectFilterValueInput } from "./select/single";
+import { TextFilterValueInput } from "./text";
 
 export const FilterValueInput = observer(function FilterValueInput<P extends TFilterProperty, V extends TFilterValue>(
   props: TFilterValueInputProps<P, V>
@@ -85,7 +86,22 @@ export const FilterValueInput = observer(function FilterValueInput<P extends TFi
 export const AdditionalFilterValueInput = observer(function AdditionalFilterValueInput<
   P extends TFilterProperty,
   V extends TFilterValue,
->(_props: TFilterValueInputProps<P, V>) {
+>(props: TFilterValueInputProps<P, V>) {
+  const { condition, filterFieldConfig, isDisabled = false, onChange } = props;
+
+  if (filterFieldConfig?.type === FILTER_FIELD_TYPE.TEXT || filterFieldConfig?.type === FILTER_FIELD_TYPE.NUMBER) {
+    return (
+      <TextFilterValueInput
+        type={filterFieldConfig.type === FILTER_FIELD_TYPE.NUMBER ? "number" : "text"}
+        value={
+          typeof condition.value === "string" || typeof condition.value === "number" ? String(condition.value) : ""
+        }
+        isDisabled={isDisabled}
+        onChange={(value) => onChange(value as SingleOrArray<V>)}
+      />
+    );
+  }
+
   return (
     // Fallback
     <div className="flex h-full cursor-not-allowed items-center px-4 text-11 text-placeholder transition-opacity duration-200">

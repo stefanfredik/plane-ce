@@ -4,4 +4,5 @@
  * See the LICENSE file for details.
  */
 
-export const useBulkOperationStatus = () => false;
+// Selection is on so work items can be moved to another type in bulk (see bulk-operations/root.tsx).
+export const useBulkOperationStatus = () => true;

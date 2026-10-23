@@ -22,6 +22,7 @@ from plane.utils.path_validator import sanitize_filename
 
 # Module imports
 from .base import BaseAPIView
+from plane.space.utils.published_views import PUBLISHED_ENTITIES
 
 
 class EntityAssetEndpoint(BaseAPIView):
@@ -65,9 +66,7 @@ class EntityAssetEndpoint(BaseAPIView):
         # same-origin XSS when Spaces assets are served on the application's origin.
         storage = S3Storage(request=request)
         asset_mime_type = (asset.attributes.get("type") or "").split(";")[0].strip().lower()
-        disposition = (
-            "attachment" if asset_mime_type in settings.SCRIPT_CAPABLE_MIME_TYPES else "inline"
-        )
+        disposition = "attachment" if asset_mime_type in settings.SCRIPT_CAPABLE_MIME_TYPES else "inline"
         # Generate a presigned URL to share an S3 object
         signed_url = storage.generate_presigned_url(
             object_name=asset.asset.name,
@@ -177,7 +176,7 @@ class EntityAssetEndpoint(BaseAPIView):
 
     def delete(self, request, anchor, pk):
         # Get the deploy board
-        deploy_board = DeployBoard.objects.filter(anchor=anchor, entity_name="project").first()
+        deploy_board = DeployBoard.objects.filter(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES).first()
         # Check if the project is published
         if not deploy_board:
             return Response({"error": "Project is not published"}, status=status.HTTP_404_NOT_FOUND)
@@ -196,7 +195,7 @@ class AssetRestoreEndpoint(BaseAPIView):
 
     def post(self, request, anchor, pk):
         # Get the deploy board
-        deploy_board = DeployBoard.objects.filter(anchor=anchor, entity_name="project").first()
+        deploy_board = DeployBoard.objects.filter(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES).first()
         # Check if the project is published
         if not deploy_board:
             return Response({"error": "Project is not published"}, status=status.HTTP_404_NOT_FOUND)
@@ -214,7 +213,7 @@ class EntityBulkAssetEndpoint(BaseAPIView):
 
     def post(self, request, anchor, entity_id):
         # Get the deploy board
-        deploy_board = DeployBoard.objects.filter(anchor=anchor, entity_name="project").first()
+        deploy_board = DeployBoard.objects.filter(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES).first()
         # Check if the project is published
         if not deploy_board:
             return Response({"error": "Project is not published"}, status=status.HTTP_404_NOT_FOUND)

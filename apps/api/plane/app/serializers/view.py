@@ -55,6 +55,8 @@ class ViewIssueListSerializer(serializers.Serializer):
 
 class IssueViewSerializer(DynamicBaseSerializer):
     is_favorite = serializers.BooleanField(read_only=True)
+    # Public link id when the view is published (see app/views/view/publish.py)
+    anchor = serializers.CharField(read_only=True, allow_null=True, required=False)
 
     class Meta:
         model = IssueView

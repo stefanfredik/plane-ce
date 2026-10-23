@@ -107,6 +107,7 @@ def issue_on_results(
         "id",
         "name",
         "state_id",
+        "type_id",
         "sort_order",
         "completed_at",
         "estimate_point",
@@ -138,6 +139,11 @@ def issue_on_results(
         original_list.append(sub_group_by)
 
     required_fields.extend(original_list)
+
+    # Custom property grouping annotates its own field, which the client needs per item
+    for key in (group_by, sub_group_by):
+        if key == "custom_property_group" and key not in required_fields:
+            required_fields.append(key)
     return list(issues.values(*required_fields))
 
 

@@ -31,6 +31,8 @@ class TestIssueGroupByAllowlist:
             "created_by",
             "target_date",
             "start_date",
+            # fixed annotation name used when grouping by a custom property (never user input)
+            "custom_property_group",
         }
         assert ISSUE_GROUP_BY_ALLOWLIST == frozenset(expected)
 

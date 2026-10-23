@@ -22,7 +22,11 @@ export const EXTENDED_COLLECTION_OPERATOR = {} as const;
 /**
  * Extended comparison operators
  */
-export const EXTENDED_COMPARISON_OPERATOR = {} as const;
+export const EXTENDED_COMPARISON_OPERATOR = {
+  CONTAINS: "icontains",
+  GTE: "gte",
+  LTE: "lte",
+} as const;
 
 /**
  * Extended operators that support multiple values

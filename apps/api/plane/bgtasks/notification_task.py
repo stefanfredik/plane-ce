@@ -179,6 +179,8 @@ def create_mention_notification(project, notification_comment, issue, actor_id, 
                 "field": str(activity.get("field")),
                 "actor": str(activity.get("actor_id")),
                 "new_value": str(activity.get("new_value")),
+                # Custom property activities carry the property name in `comment`.
+                "property_name": (activity.get("comment") if activity.get("field") == "custom_property" else None),
                 "old_value": str(activity.get("old_value")),
                 "old_identifier": (str(activity.get("old_identifier")) if activity.get("old_identifier") else None),
                 "new_identifier": (str(activity.get("new_identifier")) if activity.get("new_identifier") else None),
@@ -386,6 +388,12 @@ def notifications(
                                     "field": str(issue_activity.get("field")),
                                     "actor": str(issue_activity.get("actor_id")),
                                     "new_value": str(issue_activity.get("new_value")),
+                                    # Custom property activities carry the property name in `comment`.
+                                    "property_name": (
+                                        issue_activity.get("comment")
+                                        if issue_activity.get("field") == "custom_property"
+                                        else None
+                                    ),
                                     "old_value": str(issue_activity.get("old_value")),
                                     "issue_comment": str(
                                         issue_comment.comment_stripped if issue_comment is not None else ""
@@ -429,6 +437,12 @@ def notifications(
                                         "field": str(issue_activity.get("field")),
                                         "actor": str(issue_activity.get("actor_id")),
                                         "new_value": str(issue_activity.get("new_value")),
+                                        # Custom property activities carry the property name in `comment`.
+                                        "property_name": (
+                                            issue_activity.get("comment")
+                                            if issue_activity.get("field") == "custom_property"
+                                            else None
+                                        ),
                                         "old_value": str(issue_activity.get("old_value")),
                                         "issue_comment": str(
                                             issue_comment.comment_stripped if issue_comment is not None else ""
@@ -501,6 +515,12 @@ def notifications(
                                             "field": str("mention"),
                                             "actor": str(issue_activity.get("actor_id")),
                                             "new_value": str(issue_activity.get("new_value")),
+                                            # Custom property activities carry the property name in `comment`.
+                                            "property_name": (
+                                                issue_activity.get("comment")
+                                                if issue_activity.get("field") == "custom_property"
+                                                else None
+                                            ),
                                             "old_value": str(issue_activity.get("old_value")),
                                             "old_identifier": (
                                                 str(issue_activity.get("old_identifier"))
@@ -640,6 +660,12 @@ def notifications(
                                                 "field": str("mention"),
                                                 "actor": str(issue_activity.get("actor_id")),
                                                 "new_value": str(issue_activity.get("new_value")),
+                                                # Custom property activities carry the property name in `comment`.
+                                                "property_name": (
+                                                    issue_activity.get("comment")
+                                                    if issue_activity.get("field") == "custom_property"
+                                                    else None
+                                                ),
                                                 "old_value": str(issue_activity.get("old_value")),
                                                 "old_identifier": (
                                                     str(issue_activity.get("old_identifier"))

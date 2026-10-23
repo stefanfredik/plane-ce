@@ -45,7 +45,11 @@ export const ViewQuickActions = observer(function ViewQuickActions(props: Props)
   const isOwner = view?.owned_by === data?.id;
   const isAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.PROJECT, workspaceSlug, projectId);
 
-  const { publishContextMenu } = useViewPublish(!!view.anchor, isAdmin || isOwner);
+  const { publishContextMenu, publishModal } = useViewPublish(!!view.anchor, isAdmin || isOwner, {
+    workspaceSlug,
+    projectId,
+    view,
+  });
 
   const viewLink = `${workspaceSlug}/projects/${projectId}/views/${view.id}`;
   const handleCopyText = () =>
@@ -97,6 +101,7 @@ export const ViewQuickActions = observer(function ViewQuickActions(props: Props)
       />
       <DeleteProjectViewModal data={view} isOpen={deleteViewModal} onClose={() => setDeleteViewModal(false)} />
       {additionalModals}
+      {publishModal}
       <ContextMenu parentRef={parentRef} items={CONTEXT_MENU_ITEMS} />
       <CustomMenu
         customButton={<IconButton variant="tertiary" size="lg" icon={MoreHorizontal} />}

@@ -5,7 +5,7 @@
  */
 
 import { observer } from "mobx-react";
-import { ProjectIcon } from "@plane/propel/icons";
+import { ProjectIcon, ViewsIcon } from "@plane/propel/icons";
 // components
 import { ProjectLogo } from "@/components/common/project-logo";
 // store
@@ -20,7 +20,7 @@ type Props = {
 export const IssuesNavbarRoot = observer(function IssuesNavbarRoot(props: Props) {
   const { publishSettings } = props;
   // hooks
-  const { project_details } = publishSettings;
+  const { project_details, view_details } = publishSettings;
 
   return (
     <div className="relative flex w-full justify-between gap-4 px-5">
@@ -38,6 +38,13 @@ export const IssuesNavbarRoot = observer(function IssuesNavbarRoot(props: Props)
         <div className="line-clamp-1 max-w-[300px] overflow-hidden text-16 font-medium">
           {project_details?.name || `...`}
         </div>
+        {view_details && (
+          <>
+            <span className="text-16 text-placeholder">/</span>
+            <ViewsIcon className="size-4 shrink-0 text-tertiary" />
+            <div className="line-clamp-1 max-w-[300px] overflow-hidden text-16 font-medium">{view_details.name}</div>
+          </>
+        )}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <NavbarControls publishSettings={publishSettings} />

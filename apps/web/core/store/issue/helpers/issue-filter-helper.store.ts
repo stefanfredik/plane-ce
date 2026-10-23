@@ -31,6 +31,10 @@ import { getComputedDisplayFilters, getComputedDisplayProperties } from "@plane/
 // lib
 import { storage } from "@/lib/local-storage";
 
+/** `customproperty_<id>` keys group and sort by a work item type property. */
+export const isCustomPropertyKey = (value: unknown): value is `customproperty_${string}` =>
+  typeof value === "string" && value.startsWith("customproperty_");
+
 interface ILocalStoreIssueFilters {
   key: EIssuesStoreType;
   workspaceSlug: string;
@@ -95,10 +99,16 @@ export class IssueFilterHelperStore implements IIssueFilterHelperStore {
     acceptableParamsByLayout: TIssueParams[]
   ): Partial<Record<TIssueParams, string | boolean>> => {
     const computedDisplayFilters: Partial<Record<TIssueParams, undefined | string[] | boolean | string>> = {
-      group_by: displayFilters?.group_by ? EIssueGroupByToServerOptions[displayFilters.group_by] : undefined,
-      sub_group_by: displayFilters?.sub_group_by
-        ? EIssueGroupByToServerOptions[displayFilters.sub_group_by]
+      group_by: displayFilters?.group_by
+        ? isCustomPropertyKey(displayFilters.group_by)
+          ? displayFilters.group_by
+          : EIssueGroupByToServerOptions[displayFilters.group_by as keyof typeof EIssueGroupByToServerOptions]
         : undefined,
+      // Custom properties group only the first level.
+      sub_group_by:
+        displayFilters?.sub_group_by && !isCustomPropertyKey(displayFilters.sub_group_by)
+          ? EIssueGroupByToServerOptions[displayFilters.sub_group_by as keyof typeof EIssueGroupByToServerOptions]
+          : undefined,
       order_by: displayFilters?.order_by || undefined,
       sub_issue: displayFilters?.sub_issue ?? true,
     };
@@ -328,7 +338,14 @@ export class IssueFilterHelperStore implements IIssueFilterHelperStore {
       const groupBy = paginationParams["group_by"] as EIssueGroupByToServerOptions | undefined;
       delete paginationParams["group_by"];
 
-      if (groupBy) {
+      if (groupBy && isCustomPropertyKey(groupBy)) {
+        // A custom property group is fetched with a rich filter on that property's value.
+        if (groupId !== "None") {
+          const condition = { [`${groupBy}__in`]: groupId };
+          const existing = paginationParams.filters ? JSON.parse(String(paginationParams.filters)) : null;
+          paginationParams.filters = JSON.stringify(existing ? { and: [existing, condition] } : condition);
+        }
+      } else if (groupBy) {
         const groupByFilterOption = EServerGroupByToFilterOptions[groupBy];
         paginationParams[groupByFilterOption] = groupId;
       }

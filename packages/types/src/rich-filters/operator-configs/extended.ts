@@ -4,8 +4,13 @@
  * See the LICENSE file for details.
  */
 
+import type { TFilterValue } from "../expression";
+import type { TNumberFilterFieldConfig, TTextFilterFieldConfig } from "../field-types/extended";
+
 // ----------------------------- EXACT Operator -----------------------------
-export type TExtendedExactOperatorConfigs = never;
+export type TExtendedExactOperatorConfigs =
+  | TTextFilterFieldConfig<TFilterValue>
+  | TNumberFilterFieldConfig<TFilterValue>;
 
 // ----------------------------- IN Operator -----------------------------
 export type TExtendedInOperatorConfigs = never;
@@ -14,4 +19,8 @@ export type TExtendedInOperatorConfigs = never;
 export type TExtendedRangeOperatorConfigs = never;
 
 // ----------------------------- Extended Operator Specific Configs -----------------------------
-export type TExtendedOperatorSpecificConfigs = unknown;
+export type TExtendedOperatorSpecificConfigs = {
+  icontains: TTextFilterFieldConfig<TFilterValue>;
+  gte: TNumberFilterFieldConfig<TFilterValue>;
+  lte: TNumberFilterFieldConfig<TFilterValue>;
+};

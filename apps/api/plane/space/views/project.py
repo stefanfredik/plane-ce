@@ -14,15 +14,23 @@ from rest_framework.permissions import AllowAny
 from .base import BaseAPIView
 from plane.app.serializers import DeployBoardSerializer
 from plane.db.models import Project, DeployBoard, ProjectMember
+from plane.space.utils.published_views import PUBLISHED_ENTITIES, published_view
 
 
 class ProjectDeployBoardPublicSettingsEndpoint(BaseAPIView):
     permission_classes = [AllowAny]
 
     def get(self, request, anchor):
-        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name="project")
-        serializer = DeployBoardSerializer(project_deploy_board)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        project_deploy_board = DeployBoard.objects.get(anchor=anchor, entity_name__in=PUBLISHED_ENTITIES)
+        # A view that went private or was archived is no longer public.
+        view = published_view(project_deploy_board)
+        data = DeployBoardSerializer(project_deploy_board).data
+        data["view_details"] = (
+            {"id": str(view.id), "name": view.name, "description": view.description, "logo_props": view.logo_props}
+            if view
+            else None
+        )
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class WorkspaceProjectDeployBoardEndpoint(BaseAPIView):
@@ -58,8 +66,15 @@ class WorkspaceProjectAnchorEndpoint(BaseAPIView):
         project_deploy_board = DeployBoard.objects.get(
             workspace__slug=slug, project_id=project_id, entity_name="project"
         )
-        serializer = DeployBoardSerializer(project_deploy_board)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # A view that went private or was archived is no longer public.
+        view = published_view(project_deploy_board)
+        data = DeployBoardSerializer(project_deploy_board).data
+        data["view_details"] = (
+            {"id": str(view.id), "name": view.name, "description": view.description, "logo_props": view.logo_props}
+            if view
+            else None
+        )
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class ProjectMembersEndpoint(BaseAPIView):

@@ -69,6 +69,12 @@ import { ThemeStore } from "./theme.store";
 import type { IUserStore } from "./user";
 import { UserStore } from "./user";
 import type { IWorkspaceRootStore } from "./workspace";
+import type { IWorkItemTypeStore } from "./work-item-type.store";
+import { WorkItemTypeStore } from "./work-item-type.store";
+import type { IWorkItemDashboardStore } from "./work-item-dashboard.store";
+import { WorkItemDashboardStore } from "./work-item-dashboard.store";
+import type { ICustomerStore } from "./customer.store";
+import { CustomerStore } from "./customer.store";
 
 enableStaticRendering(typeof window === "undefined");
 
@@ -103,6 +109,9 @@ export class CoreRootStore {
   workItemFilters: IWorkItemFilterStore;
   powerK: IPowerKStore;
   timelineStore: ITimelineStore;
+  workItemType: IWorkItemTypeStore;
+  workItemDashboard: IWorkItemDashboardStore;
+  customer: ICustomerStore;
 
   constructor() {
     this.router = new RouterStore();
@@ -134,6 +143,9 @@ export class CoreRootStore {
     this.analytics = new AnalyticsStore();
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
+    this.workItemType = new WorkItemTypeStore(this);
+    this.workItemDashboard = new WorkItemDashboardStore();
+    this.customer = new CustomerStore();
     this.timelineStore = new TimeLineStore(this);
   }
 
@@ -168,6 +180,9 @@ export class CoreRootStore {
     this.editorAssetStore = new EditorAssetStore();
     this.workItemFilters = new WorkItemFilterStore();
     this.powerK = new PowerKStore();
+    this.workItemType = new WorkItemTypeStore(this);
+    this.workItemDashboard = new WorkItemDashboardStore();
+    this.customer = new CustomerStore();
     this.timelineStore = new TimeLineStore(this);
   }
 }

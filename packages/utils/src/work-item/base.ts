@@ -310,6 +310,8 @@ export const getComputedDisplayProperties = (
   modules: displayProperties?.modules ?? true,
   cycle: displayProperties?.cycle ?? true,
   issue_type: displayProperties?.issue_type ?? true,
+  // custom property switches are kept as they are (missing = shown)
+  ...Object.fromEntries(Object.entries(displayProperties ?? {}).filter(([key]) => key.startsWith("customproperty_"))),
 });
 
 export const generateWorkItemLink = ({

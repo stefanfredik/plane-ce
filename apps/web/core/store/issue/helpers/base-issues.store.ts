@@ -331,8 +331,10 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
     // oxlint-disable-next-line no-shadow
     const orderBy = this.orderBy;
     if (!orderBy) return;
+    // Custom property ordering is done by the server; keep its order.
+    if (orderBy.replace(/^-/, "").startsWith("customproperty_")) return;
 
-    return ISSUE_ORDERBY_KEY[orderBy];
+    return ISSUE_ORDERBY_KEY[orderBy as keyof typeof ISSUE_ORDERBY_KEY];
   }
 
   // The Issue Property corresponding to the group by value
@@ -340,8 +342,10 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
     const groupBy = this.groupBy;
 
     if (!groupBy) return;
+    // The server adds the grouped custom property's value to every item.
+    if (groupBy.startsWith("customproperty_")) return "custom_property_group" as keyof TIssue;
 
-    return ISSUE_GROUP_BY_KEY[groupBy];
+    return ISSUE_GROUP_BY_KEY[groupBy as keyof typeof ISSUE_GROUP_BY_KEY];
   }
 
   // The Issue Property corresponding to the sub group by value
@@ -1764,6 +1768,8 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
   }
 
   issuesSortWithOrderBy = (issueIds: string[], key: TIssueOrderByOptions | undefined): string[] => {
+    // Custom property ordering comes from the server; keep the order it sent.
+    if (key && key.replace(/^-/, "").startsWith("customproperty_")) return issueIds;
     const issues = this.rootIssueStore.issues.getIssuesByIds(issueIds, this.isArchived ? "archived" : "un-archived");
     const array = orderBy(issues, (issue) => convertToISODateString(issue["created_at"]), ["desc"]);
 

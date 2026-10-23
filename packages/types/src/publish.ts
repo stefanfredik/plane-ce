@@ -7,7 +7,7 @@
 import type { IProject, IProjectLite } from "./project";
 import type { IWorkspaceLite } from "./workspace";
 
-export type TPublishEntityType = "project" | "page";
+export type TPublishEntityType = "project" | "page" | "view";
 
 export type TProjectPublishLayouts = "calendar" | "gantt" | "kanban" | "list" | "spreadsheet";
 
@@ -20,6 +20,8 @@ export type TProjectPublishViewProps = {
 };
 
 export type TProjectDetails = IProjectLite & Pick<IProject, "cover_image" | "logo_props" | "description">;
+
+export type TPublishedViewDetails = { id: string; name: string; description: string; logo_props: unknown };
 
 export type TPublishSettings = {
   anchor: string | undefined;
@@ -34,6 +36,8 @@ export type TPublishSettings = {
   is_votes_enabled: boolean;
   project: string | undefined;
   project_details: TProjectDetails | undefined;
+  /** Set when a single project view is published instead of the whole project. */
+  view_details?: TPublishedViewDetails | null;
   updated_at: string | undefined;
   updated_by: string | undefined;
   workspace: string | undefined;

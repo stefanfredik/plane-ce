@@ -41,6 +41,8 @@ import type { TIssueOperations } from "../issue-detail";
 import { IssueCycleSelect } from "../issue-detail/cycle-select";
 import { IssueLabel } from "../issue-detail/label";
 import { IssueModuleSelect } from "../issue-detail/module-select";
+import { IssueCustomersProperty } from "@/components/customers/issue-customers-property";
+import { IssueCustomProperties } from "@/components/work-item-types/issue-custom-properties";
 
 interface IPeekOverviewProperties {
   workspaceSlug: string;
@@ -243,6 +245,22 @@ export const PeekOverviewProperties = observer(function PeekOverviewProperties(p
         <SidebarPropertyListItem icon={LabelPropertyIcon} label={t("common.labels")}>
           <IssueLabel workspaceSlug={workspaceSlug} projectId={projectId} issueId={issueId} disabled={disabled} />
         </SidebarPropertyListItem>
+
+        <IssueCustomersProperty
+          workspaceSlug={workspaceSlug}
+          projectId={projectId}
+          issueId={issueId}
+          disabled={disabled}
+        />
+      </div>
+      <div className="mt-4 border-t-[0.5px] border-subtle pt-3">
+        <IssueCustomProperties
+          workspaceSlug={workspaceSlug}
+          projectId={projectId}
+          issueId={issueId}
+          typeId={issue.type_id}
+          disabled={disabled}
+        />
       </div>
     </div>
   );

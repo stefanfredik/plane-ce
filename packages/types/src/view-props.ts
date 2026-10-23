@@ -23,6 +23,8 @@ export type TIssueGroupByOptions =
   | "module"
   | "target_date"
   | "team_project"
+  /** A single-value custom property: groups are its options / members / yes-no. */
+  | `customproperty_${string}`
   | null;
 
 export type TIssueOrderByOptions =
@@ -54,7 +56,10 @@ export type TIssueOrderByOptions =
   | "attachment_count"
   | "-attachment_count"
   | "sub_issues_count"
-  | "-sub_issues_count";
+  | "-sub_issues_count"
+  /** Order by a custom property (descending with a leading "-"). */
+  | `customproperty_${string}`
+  | `-customproperty_${string}`;
 
 export type TIssueGroupingFilters = "active" | "backlog";
 
@@ -109,8 +114,11 @@ export const WORK_ITEM_FILTER_PROPERTY_KEYS = [
   "project_id",
   "created_at",
   "updated_at",
+  "type_id",
+  "customer_id",
 ] as const;
-export type TWorkItemFilterProperty = (typeof WORK_ITEM_FILTER_PROPERTY_KEYS)[number];
+/** Built-in filter keys, plus one `customproperty_<property id>` key per custom property. */
+export type TWorkItemFilterProperty = (typeof WORK_ITEM_FILTER_PROPERTY_KEYS)[number] | `customproperty_${string}`;
 
 export type TWorkItemFilterConditionKey = `${TWorkItemFilterProperty}__${TSupportedOperators}`;
 
@@ -175,6 +183,8 @@ export interface IIssueDisplayProperties {
   modules?: boolean;
   cycle?: boolean;
   issue_type?: boolean;
+  /** One switch per custom property (`customproperty_<property id>`); missing means shown. */
+  [customProperty: `customproperty_${string}`]: boolean | undefined;
 }
 
 export type TIssueKanbanFilters = {

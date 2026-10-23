@@ -6,6 +6,7 @@
 
 import React from "react";
 import { observer } from "mobx-react";
+import { useParams } from "next/navigation";
 // plane constants
 import { ISSUE_DISPLAY_PROPERTIES } from "@plane/constants";
 // plane i18n
@@ -13,6 +14,10 @@ import { useTranslation } from "@plane/i18n";
 // types
 import type { IIssueDisplayProperties } from "@plane/types";
 // components
+import { customPropertyDisplayKey, isCustomPropertyShown } from "@/components/work-item-types/display-helpers";
+import { WorkItemPropertyIcon } from "@/components/work-item-types/property-icon";
+// hooks
+import { useWorkItemType } from "@/hooks/store/use-work-item-type";
 import { FilterHeader } from "../helpers/filter-header";
 
 type Props = {
@@ -37,6 +42,10 @@ export const FilterDisplayProperties = observer(function FilterDisplayProperties
   const { t } = useTranslation();
   // states
   const [previewEnabled, setPreviewEnabled] = React.useState(true);
+  // custom properties of the current project's types (once each), each with its own switch
+  const { projectId } = useParams();
+  const workItemTypeStore = useWorkItemType();
+  const customColumns = projectId && !isEpic ? workItemTypeStore.getProjectPropertyColumns(projectId.toString()) : [];
 
   // Filter out "cycle" and "module" keys if cycleViewDisabled or moduleViewDisabled is true
   // Also filter out display properties that should not be rendered
@@ -52,7 +61,7 @@ export const FilterDisplayProperties = observer(function FilterDisplayProperties
     }
   }).map((property) => {
     if (isEpic && property.key === "sub_issue_count") {
-      return { ...property, titleTranslationKey: "issue.display.properties.work_item_count" };
+      return Object.assign({}, property, { titleTranslationKey: "issue.display.properties.work_item_count" });
     }
     return property;
   });
@@ -86,6 +95,23 @@ export const FilterDisplayProperties = observer(function FilterDisplayProperties
               </button>
             </>
           ))}
+          {customColumns.map(({ property }) => {
+            const shown = isCustomPropertyShown(displayProperties, property.id);
+            return (
+              <button
+                key={property.id}
+                type="button"
+                title={property.description || property.display_name}
+                className={`flex items-center gap-1 rounded-sm border px-2 py-0.5 text-11 transition-all ${
+                  shown ? "border-accent-strong bg-accent-primary text-on-color" : "border-subtle hover:bg-layer-1"
+                }`}
+                onClick={() => handleUpdate({ [customPropertyDisplayKey(property.id)]: !shown })}
+              >
+                <WorkItemPropertyIcon property={property} className="size-3" />
+                {property.display_name}
+              </button>
+            );
+          })}
         </div>
       )}
     </>

@@ -5,7 +5,7 @@
  */
 
 import type { TSupportedOperators } from "@plane/types";
-import { CORE_OPERATORS } from "@plane/types";
+import { CORE_OPERATORS, EXTENDED_OPERATORS } from "@plane/types";
 
 export type TFiltersOperatorConfigs = {
   allowedOperators: Set<TSupportedOperators>;
@@ -17,6 +17,7 @@ export type TUseFiltersOperatorConfigsProps = {
 };
 
 export const useFiltersOperatorConfigs = (_props: TUseFiltersOperatorConfigsProps): TFiltersOperatorConfigs => ({
-  allowedOperators: new Set(Object.values(CORE_OPERATORS)),
+  // Extended operators (contains, at least, at most) back the text and number custom property filters.
+  allowedOperators: new Set([...Object.values(CORE_OPERATORS), ...Object.values(EXTENDED_OPERATORS)]),
   allowNegative: false,
 });

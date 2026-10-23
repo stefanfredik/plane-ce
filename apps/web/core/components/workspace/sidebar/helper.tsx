@@ -17,6 +17,7 @@ import {
   YourWorkIcon,
 } from "@plane/propel/icons";
 import { cn } from "@plane/utils";
+import { Contact, LayoutDashboard } from "lucide-react";
 
 export const getSidebarNavigationItemIcon = (key: string, className: string = "") => {
   switch (key) {
@@ -32,6 +33,10 @@ export const getSidebarNavigationItemIcon = (key: string, className: string = ""
       return <CycleIcon className={cn("size-4 flex-shrink-0", className)} />;
     case "analytics":
       return <AnalyticsIcon className={cn("size-4 flex-shrink-0", className)} />;
+    case "dashboards":
+      return <LayoutDashboard className={cn("size-4 flex-shrink-0", className)} />;
+    case "customers":
+      return <Contact className={cn("size-4 flex-shrink-0", className)} />;
     case "your_work":
       return <YourWorkIcon className={cn("size-4 flex-shrink-0", className)} />;
     case "drafts":

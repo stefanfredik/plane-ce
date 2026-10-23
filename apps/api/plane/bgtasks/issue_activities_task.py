@@ -4,6 +4,7 @@
 
 # Python imports
 import json
+import uuid
 
 
 # Third Party imports
@@ -21,6 +22,7 @@ from plane.db.models import (
     CommentReaction,
     Cycle,
     Issue,
+    IssueType,
     IssueActivity,
     IssueComment,
     IssueReaction,
@@ -183,6 +185,47 @@ def track_priority(
                 epoch=epoch,
             )
         )
+
+
+# Track changes in the work item type
+def track_type(
+    requested_data,
+    current_instance,
+    issue_id,
+    project_id,
+    workspace_id,
+    actor_id,
+    issue_activities,
+    epoch,
+):
+    old_id = current_instance.get("type_id")
+    new_id = requested_data.get("type_id")
+    if str(old_id or "") == str(new_id or ""):
+        return
+    names = dict(IssueType.objects.filter(id__in=[i for i in (old_id, new_id) if i]).values_list("id", "name"))
+    issue_activities.append(
+        IssueActivity(
+            issue_id=issue_id,
+            actor_id=actor_id,
+            verb="updated",
+            old_value=names.get(_as_uuid(old_id), "") if old_id else "",
+            new_value=names.get(_as_uuid(new_id), "") if new_id else "",
+            old_identifier=old_id or None,
+            new_identifier=new_id or None,
+            field="type",
+            project_id=project_id,
+            workspace_id=workspace_id,
+            comment="updated the work item type to",
+            epoch=epoch,
+        )
+    )
+
+
+def _as_uuid(value):
+    try:
+        return uuid.UUID(str(value))
+    except ValueError:
+        return value
 
 
 # Track changes in state of the issue
@@ -606,6 +649,7 @@ def update_issue_activity(
         "parent_id": track_parent,
         "priority": track_priority,
         "state_id": track_state,
+        "type_id": track_type,
         "description_html": track_description,
         "target_date": track_target_date,
         "start_date": track_start_date,

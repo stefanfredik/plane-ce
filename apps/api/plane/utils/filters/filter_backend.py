@@ -15,6 +15,7 @@ from rest_framework import filters
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from plane.utils.exception_logger import log_exception
+from plane.utils.filters.custom_property import custom_property_q, is_custom_property_key
 
 
 class ComplexFilterBackend(filters.BaseFilterBackend):
@@ -118,6 +119,9 @@ class ComplexFilterBackend(filters.BaseFilterBackend):
             # Field keys must match FilterSet filter names (including any lookups)
             # Example: 'sequence_id__gte' should be declared in base_filters
             # Special-case __range: require the '<base>__range' filter itself
+            # Custom property keys are dynamic; custom_property_q validates them.
+            if is_custom_property_key(field):
+                continue
             if field not in allowed_fields:
                 raise DRFValidationError(
                     {
@@ -255,7 +259,14 @@ class ComplexFilterBackend(filters.BaseFilterBackend):
             )
 
         # Apply preprocessing hook
-        processed_conditions = self._preprocess_leaf_conditions(leaf_conditions, view, queryset)
+        processed_conditions = dict(self._preprocess_leaf_conditions(leaf_conditions, view, queryset))
+
+        # Custom property conditions are built here; the rest go through the FilterSet.
+        custom_q = Q()
+        for key in [k for k in processed_conditions if is_custom_property_key(k)]:
+            custom_q &= custom_property_q(key, processed_conditions.pop(key))
+        if not processed_conditions:
+            return custom_q
 
         # Build a QueryDict from the leaf conditions
         qd = QueryDict(mutable=True)
@@ -293,7 +304,7 @@ class ComplexFilterBackend(filters.BaseFilterBackend):
                 }
             )
 
-        return fs.build_combined_q()
+        return fs.build_combined_q() & custom_q
 
     def _get_max_depth(self, view):
         """Return the maximum allowed nesting depth for complex filters.

@@ -4,8 +4,9 @@
  * See the LICENSE file for details.
  */
 
-import { useCallback, useMemo } from "react";
-import { AtSign, Briefcase } from "lucide-react";
+import { useCallback, useEffect, useMemo } from "react";
+import { AtSign, Briefcase, Contact, Layers } from "lucide-react";
+import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 // plane imports
 import { Logo } from "@plane/propel/emoji-icon-picker";
 import {
@@ -41,6 +42,9 @@ import {
   getCycleFilterConfig,
   getFileURL,
   getLabelFilterConfig,
+  getCustomPropertyFilterConfig,
+  getWorkItemTypeFilterConfig,
+  getCustomerFilterConfig,
   getMentionFilterConfig,
   getModuleFilterConfig,
   getPriorityFilterConfig,
@@ -60,8 +64,24 @@ import { useMember } from "@/hooks/store/use-member";
 import { useModule } from "@/hooks/store/use-module";
 import { useProject } from "@/hooks/store/use-project";
 import { useProjectState } from "@/hooks/store/use-project-state";
+import { useWorkItemType } from "@/hooks/store/use-work-item-type";
+import { useCustomer } from "@/hooks/store/use-customer";
+import { useUserPermissions } from "@/hooks/store/user";
 // plane web imports
 import { useFiltersOperatorConfigs } from "@/hooks/rich-filters/use-filters-operator-configs";
+import { getPropertyIconComponent } from "@/components/work-item-types/property-icon";
+
+const TEXT_PROPERTY_TYPES = new Set(["TEXT", "PARAGRAPH", "EMAIL", "URL", "RICH_TEXT"]);
+const FILTERABLE_PROPERTY_TYPES = new Set([
+  "OPTION",
+  "CASCADING",
+  "MEMBER",
+  "DATE",
+  "BOOLEAN",
+  "NUMBER",
+  "FORMULA",
+  ...TEXT_PROPERTY_TYPES,
+]);
 
 export type TWorkItemFiltersEntityProps = {
   workspaceSlug: string;
@@ -98,6 +118,9 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
   const { getModuleById } = useModule();
   const { getStateById } = useProjectState();
   const { getUserDetails } = useMember();
+  const workItemTypeStore = useWorkItemType();
+  const customerStore = useCustomer();
+  const { allowPermissions } = useUserPermissions();
   // derived values
   const operatorConfigs = useFiltersOperatorConfigs({ workspaceSlug });
   const filtersToShow = useMemo(() => new Set(allowedFilters), [allowedFilters]);
@@ -131,10 +154,7 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
     [moduleIds, getModuleById]
   );
   const projects = useMemo(
-    () =>
-      projectIds
-        ? (projectIds.map((projectId) => getProjectById(projectId)).filter((project) => project) as IProject[])
-        : [],
+    () => (projectIds ? (projectIds.map((id) => getProjectById(id)).filter((item) => item) as IProject[]) : []),
     [projectIds, getProjectById]
   );
   const areAllConfigsInitialized = useMemo(() => isLoaderReady(projectLoader), [projectLoader]);
@@ -356,11 +376,110 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
         isEnabled: isFilterEnabled("project_id") && projects !== undefined,
         filterIcon: Briefcase,
         projects: projects,
-        getOptionIcon: (project) => <Logo logo={project.logo_props} size={12} />,
+        getOptionIcon: (option) => <Logo logo={option.logo_props} size={12} />,
         ...operatorConfigs,
       }),
     [isFilterEnabled, projects, operatorConfigs]
   );
+
+  // work item type + custom property filter configs (project scope only)
+  useEffect(() => {
+    if (workspaceSlug && projectId) void workItemTypeStore.fetchProjectTypes(workspaceSlug, projectId);
+  }, [workItemTypeStore, workspaceSlug, projectId]);
+  const storedProjectTypes = projectId ? workItemTypeStore.projectTypes[projectId] : undefined;
+  const projectWorkItemTypes = useMemo(() => storedProjectTypes?.types ?? [], [storedProjectTypes]);
+  const typesEnabled = !!projectId && workItemTypeStore.isEnabled(projectId);
+  const typeFilterConfig = useMemo(
+    () =>
+      getWorkItemTypeFilterConfig<TWorkItemFilterProperty>("type_id")({
+        isEnabled: isFilterEnabled("type_id") && typesEnabled,
+        filterIcon: Layers,
+        items: projectWorkItemTypes.map((type) => ({
+          id: type.id,
+          name: type.name,
+          color: (type.logo_props?.icon?.color as string | undefined) ?? "#6b7280",
+        })),
+        getOptionIcon: (color) => <span className="size-2 rounded-full" style={{ backgroundColor: color }} />,
+        ...operatorConfigs,
+      }),
+    [isFilterEnabled, typesEnabled, projectWorkItemTypes, operatorConfigs]
+  );
+  // customers are workspace records that guests cannot see
+  const canSeeCustomers = allowPermissions(
+    [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
+    EUserPermissionsLevel.WORKSPACE
+  );
+  useEffect(() => {
+    if (workspaceSlug && canSeeCustomers && customerStore.customers === undefined)
+      void customerStore.fetchCustomers(workspaceSlug).catch(() => undefined);
+  }, [customerStore, workspaceSlug, canSeeCustomers]);
+  const customers = customerStore.customers;
+  const customerFilterConfig = useMemo(
+    () =>
+      getCustomerFilterConfig<TWorkItemFilterProperty>("customer_id")({
+        isEnabled: isFilterEnabled("customer_id") && canSeeCustomers && !!customers?.length,
+        filterIcon: Contact,
+        items: (customers ?? []).map((customer) => ({ id: customer.id, name: customer.name })),
+        getOptionIcon: () => <Contact className="size-3 text-tertiary" />,
+        ...operatorConfigs,
+      }),
+    [isFilterEnabled, canSeeCustomers, customers, operatorConfigs]
+  );
+  // one filter per filterable custom property (dropdown, member, date, yes/no)
+  const customPropertyFilterConfigs = useMemo(() => {
+    const isEnabled = isFilterEnabled("type_id") && typesEnabled;
+    const typesWithProperties = projectWorkItemTypes.filter((type) => type.properties.length > 0);
+    return typesWithProperties.flatMap((type) =>
+      type.properties
+        .filter((property) => property.is_active && FILTERABLE_PROPERTY_TYPES.has(property.property_type))
+        .map((property) => {
+          const key = `customproperty_${property.id}` as TWorkItemFilterProperty;
+          const label =
+            typesWithProperties.length > 1 ? `${type.name} · ${property.display_name}` : property.display_name;
+          const shared = { isEnabled, filterIcon: getPropertyIconComponent(property), ...operatorConfigs };
+          if (property.property_type === "MEMBER")
+            return getCustomPropertyFilterConfig(key, label, {
+              kind: "member",
+              ...shared,
+              members: members ?? [],
+              getOptionIcon: (memberDetails) => (
+                <Avatar
+                  name={memberDetails.display_name}
+                  src={getFileURL(memberDetails.avatar_url)}
+                  showTooltip={false}
+                  size="sm"
+                />
+              ),
+            });
+          if (property.property_type === "DATE")
+            return getCustomPropertyFilterConfig(key, label, { kind: "date", ...shared });
+          if (TEXT_PROPERTY_TYPES.has(property.property_type))
+            return getCustomPropertyFilterConfig(key, label, { kind: "text", ...shared });
+          if (property.property_type === "NUMBER" || property.property_type === "FORMULA")
+            return getCustomPropertyFilterConfig(key, label, { kind: "number", ...shared });
+          const optionName = (option: { name: string; parent_id?: string | null }) => {
+            const parent = option.parent_id && property.options.find((o) => o.id === option.parent_id);
+            return parent ? `${parent.name} › ${option.name}` : option.name;
+          };
+          const items =
+            property.property_type === "BOOLEAN"
+              ? [
+                  { id: "true", name: "Yes" },
+                  { id: "false", name: "No" },
+                ]
+              : property.options
+                  .filter((option) => option.id)
+                  .map((option) => ({ id: option.id as string, name: optionName(option), color: option.color }));
+          return getCustomPropertyFilterConfig(key, label, {
+            kind: property.property_type === "BOOLEAN" ? "boolean" : "option",
+            ...shared,
+            items,
+            getOptionIcon: (color: string) =>
+              color ? <span className="size-2 rounded-full" style={{ backgroundColor: color }} /> : null,
+          });
+        })
+    );
+  }, [isFilterEnabled, typesEnabled, projectWorkItemTypes, operatorConfigs, members]);
 
   return {
     areAllConfigsInitialized,
@@ -380,6 +499,9 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
       updatedAtFilterConfig,
       createdByFilterConfig,
       subscriberFilterConfig,
+      typeFilterConfig,
+      customerFilterConfig,
+      ...customPropertyFilterConfigs,
     ],
     configMap: {
       project_id: projectFilterConfig,
@@ -397,6 +519,9 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
       target_date: targetDateFilterConfig,
       created_at: createdAtFilterConfig,
       updated_at: updatedAtFilterConfig,
+      type_id: typeFilterConfig,
+      customer_id: customerFilterConfig,
+      ...Object.fromEntries(customPropertyFilterConfigs.map((config) => [config.id, config])),
     },
     isFilterEnabled,
     members: members ?? [],

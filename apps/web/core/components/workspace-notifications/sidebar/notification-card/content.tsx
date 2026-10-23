@@ -28,6 +28,8 @@ export type TNotificationFieldData = {
   newValue: string | undefined;
   oldValue: string | undefined;
   verb: string | undefined;
+  /** Name of the custom property, for `custom_property` activities. */
+  propertyName?: string | null;
 };
 
 export type TNotificationContentDetails = {
@@ -164,12 +166,14 @@ export function NotificationContent({
   const newValue = data?.issue_activity.new_value;
   const oldValue = data?.issue_activity.old_value;
   const verb = data?.issue_activity.verb;
+  const propertyName = (data?.issue_activity as { property_name?: string | null } | undefined)?.property_name;
 
   const fieldData: TNotificationFieldData = {
     field: notificationField,
     newValue,
     oldValue,
     verb,
+    propertyName,
   };
 
   const renderTriggerName = () => (

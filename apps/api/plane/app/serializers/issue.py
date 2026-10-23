@@ -42,7 +42,9 @@ from plane.db.models import (
     IssueDescriptionVersion,
     ProjectMember,
     EstimatePoint,
+    IssueType,
 )
+from plane.utils import work_item_types
 from plane.utils.content_validator import (
     validate_html_content,
     validate_binary_data,
@@ -86,6 +88,9 @@ class IssueCreateSerializer(BaseSerializer):
     )
     parent_id = serializers.PrimaryKeyRelatedField(
         source="parent", queryset=Issue.objects.all(), required=False, allow_null=True
+    )
+    type_id = serializers.PrimaryKeyRelatedField(
+        source="type", queryset=IssueType.objects.all(), required=False, allow_null=True
     )
     label_ids = serializers.ListField(
         child=serializers.PrimaryKeyRelatedField(queryset=Label.objects.all()),
@@ -194,6 +199,14 @@ class IssueCreateSerializer(BaseSerializer):
         ):
             raise serializers.ValidationError("Estimate point is not valid please pass a valid estimate_point_id")
 
+        # Work item type must be one of the project's active types
+        if attrs.get("type") and not (
+            work_item_types.project_issue_types(self.context.get("project_id"))
+            .filter(pk=attrs["type"].id, is_active=True)
+            .exists()
+        ):
+            raise serializers.ValidationError("Work item type is not valid for this project")
+
         return attrs
 
     def create(self, validated_data):
@@ -203,6 +216,10 @@ class IssueCreateSerializer(BaseSerializer):
         project_id = self.context["project_id"]
         workspace_id = self.context["workspace_id"]
         default_assignee_id = self.context["default_assignee_id"]
+
+        # Typed projects never hold untyped work items
+        if not validated_data.get("type"):
+            validated_data["type"] = work_item_types.default_issue_type(project_id)
 
         # Create Issue
         issue = Issue.objects.create(**validated_data, project_id=project_id)
@@ -787,6 +804,7 @@ class IssueSerializer(DynamicBaseSerializer):
             "id",
             "name",
             "state_id",
+            "type_id",
             "sort_order",
             "completed_at",
             "estimate_point",

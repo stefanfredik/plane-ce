@@ -22,6 +22,9 @@ from .webhook import urlpatterns as webhook_urls
 from .workspace import urlpatterns as workspace_urls
 from .timezone import urlpatterns as timezone_urls
 from .exporter import urlpatterns as exporter_urls
+from .issue_type import urlpatterns as issue_type_urls
+from .work_item_dashboard import urlpatterns as work_item_dashboard_urls
+from .customer import urlpatterns as customer_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -31,6 +34,9 @@ urlpatterns = [
     *external_urls,
     *intake_urls,
     *issue_urls,
+    *issue_type_urls,
+    *work_item_dashboard_urls,
+    *customer_urls,
     *module_urls,
     *notification_urls,
     *page_urls,

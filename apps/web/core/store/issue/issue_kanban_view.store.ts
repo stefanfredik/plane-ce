@@ -62,7 +62,7 @@ export class IssueKanBanViewStore implements IIssueKanBanViewStore {
 
   getCanUserDragDrop = computedFn(
     (group_by: TIssueGroupByOptions | undefined, sub_group_by: TIssueGroupByOptions | undefined) => {
-      if (group_by && DRAG_ALLOWED_GROUPS.includes(group_by)) {
+      if (group_by && (DRAG_ALLOWED_GROUPS.includes(group_by) || group_by.startsWith("customproperty_"))) {
         if (!sub_group_by) return true;
         if (sub_group_by && DRAG_ALLOWED_GROUPS.includes(sub_group_by)) return true;
       }

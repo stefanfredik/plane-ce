@@ -248,7 +248,9 @@ export const ListGroup = observer(function ListGroup(props: Props) {
     isWorkflowDropDisabled,
   ]);
 
-  const isDragAllowed = group_by ? DRAG_ALLOWED_GROUPS.includes(group_by) : true;
+  const isDragAllowed = group_by
+    ? DRAG_ALLOWED_GROUPS.includes(group_by) || group_by.startsWith("customproperty_")
+    : true;
   const canOverlayBeVisible = isWorkflowDropDisabled || orderBy !== "sort_order" || !!group.isDropDisabled;
   const isDropDisabled = isWorkflowDropDisabled || !!group.isDropDisabled;
 

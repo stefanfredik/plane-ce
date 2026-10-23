@@ -45,6 +45,7 @@ import { usePlatformOS } from "@/hooks/use-platform-os";
 // local components
 import { IssuePropertyLabels } from "./labels";
 import { WithDisplayPropertiesHOC } from "./with-display-properties-HOC";
+import { IssueCustomPropertyChips } from "@/components/work-item-types/card-properties";
 
 export interface IIssueProperties {
   issue: TIssue;
@@ -499,6 +500,9 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
           maxRender={3}
         />
       </WithDisplayPropertiesHOC>
+
+      {/* custom properties of the work item type */}
+      <IssueCustomPropertyChips issue={issue} displayProperties={displayProperties} />
     </div>
   );
 });

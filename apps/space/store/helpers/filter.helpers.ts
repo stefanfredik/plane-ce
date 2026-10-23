@@ -16,6 +16,12 @@ import type { IssuePaginationOptions, TIssueParams } from "@plane/types";
  * @param subGroupId groupId if to fetch By sub group
  * @returns
  */
+/** Built-in groupings map to server names; `customproperty_<id>` keys are sent as they are. */
+const toServerGroupBy = (key: string) =>
+  key.startsWith("customproperty_")
+    ? key
+    : EIssueGroupByToServerOptions[key as keyof typeof EIssueGroupByToServerOptions];
+
 export const getPaginationParams = (
   filterParams: Partial<Record<TIssueParams, string | boolean>> | undefined,
   options: IssuePaginationOptions,
@@ -35,12 +41,12 @@ export const getPaginationParams = (
 
   // If group by is specifically sent through options, like that for calendar layout, use that to group
   if (options.groupedBy) {
-    paginationParams.group_by = EIssueGroupByToServerOptions[options.groupedBy];
+    paginationParams.group_by = toServerGroupBy(options.groupedBy);
   }
 
   // If group by is specifically sent through options, like that for calendar layout, use that to group
   if (options.subGroupedBy) {
-    paginationParams.sub_group_by = EIssueGroupByToServerOptions[options.subGroupedBy];
+    paginationParams.sub_group_by = toServerGroupBy(options.subGroupedBy);
   }
 
   // If group by is specifically sent through options, like that for calendar layout, use that to group

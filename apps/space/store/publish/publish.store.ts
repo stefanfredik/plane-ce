@@ -9,6 +9,7 @@ import { observable, makeObservable, computed } from "mobx";
 import type {
   IWorkspaceLite,
   TProjectDetails,
+  TPublishedViewDetails,
   TPublishEntityType,
   TProjectPublishSettings,
   TProjectPublishViewProps,
@@ -36,6 +37,7 @@ export class PublishStore implements IPublishStore {
   inbox: unknown;
   project: string | undefined;
   project_details: TProjectDetails | undefined;
+  view_details: TPublishedViewDetails | null | undefined;
   is_reactions_enabled: boolean;
   updated_at: string | undefined;
   updated_by: string | undefined;
@@ -58,6 +60,7 @@ export class PublishStore implements IPublishStore {
     this.inbox = publishSettings.inbox;
     this.project = publishSettings.project;
     this.project_details = publishSettings.project_details;
+    this.view_details = publishSettings.view_details;
     this.is_reactions_enabled = publishSettings.is_reactions_enabled;
     this.updated_at = publishSettings.updated_at;
     this.updated_by = publishSettings.updated_by;
@@ -78,6 +81,7 @@ export class PublishStore implements IPublishStore {
       inbox: observable,
       project: observable.ref,
       project_details: observable,
+      view_details: observable,
       is_reactions_enabled: observable.ref,
       updated_at: observable.ref,
       updated_by: observable.ref,

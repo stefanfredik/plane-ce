@@ -63,6 +63,8 @@ export type TBaseIssue = {
   cycle_id: string | null;
   module_ids: string[] | null;
   type_id: string | null;
+  /** Value of the custom property the list is grouped by (set by the server when grouping by one). */
+  custom_property_group?: string | null;
 
   created_at: string;
   updated_at: string;

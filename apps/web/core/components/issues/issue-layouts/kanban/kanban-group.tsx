@@ -275,7 +275,7 @@ export const KanbanGroup = observer(function KanbanGroup(props: IKanbanGroup) {
   const shouldOverlayBeVisible = isDraggingOverColumn && canOverlayBeVisible;
   const canDragIssuesInCurrentGrouping =
     !!group_by &&
-    DRAG_ALLOWED_GROUPS.includes(group_by) &&
+    (DRAG_ALLOWED_GROUPS.includes(group_by) || group_by.startsWith("customproperty_")) &&
     (sub_group_by ? DRAG_ALLOWED_GROUPS.includes(sub_group_by) : true);
 
   return (

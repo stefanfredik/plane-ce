@@ -27,6 +27,7 @@ from plane.db.models import (
     User,
     EstimatePoint,
 )
+from plane.utils import work_item_types
 from plane.utils.content_validator import (
     validate_html_content,
     validate_binary_data,
@@ -145,6 +146,14 @@ class IssueSerializer(BaseSerializer):
             ).exists()
         ):
             raise serializers.ValidationError("Estimate point is not valid please pass a valid estimate_point_id")
+
+        # Work item type must be one of the project's active types
+        if data.get("type") and not (
+            work_item_types.project_issue_types(self.context.get("project_id"))
+            .filter(pk=data["type"].id, is_active=True)
+            .exists()
+        ):
+            raise serializers.ValidationError("Work item type is not valid for this project")
 
         return data
 
