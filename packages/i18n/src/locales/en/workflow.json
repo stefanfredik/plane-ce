@@ -95,6 +95,23 @@
           "message": "State change rule reviewers could not be modified. Please try again."
         }
       }
+    },
+    "label": "Workflows",
+    "settings": {
+      "heading": "Workflows",
+      "description": "Decide where work items can move next, who can move them, and what must be filled in first.",
+      "enable": "Enforce workflow",
+      "enable_description": "When on, these rules apply to every change of state: lists, boards, the work item page and the API.",
+      "free_moves": "No permitted state changes yet, so work items can move to any state.",
+      "requires": "Required before entering",
+      "requires_none": "Nothing required",
+      "requires_tooltip": "A work item can move into this state only once these are filled. A property only counts for the work item types that use it.",
+      "anyone": "Anyone",
+      "fields": {
+        "assignees": "Assignees",
+        "target_date": "Due date",
+        "estimate_point": "Estimate"
+      }
     }
   }
 }

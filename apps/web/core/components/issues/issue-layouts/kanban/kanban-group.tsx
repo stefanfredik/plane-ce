@@ -162,11 +162,11 @@ export const KanbanGroup = observer(function KanbanGroup(props: IKanbanGroup) {
 
           if (!source || !destination) return;
 
-          if ((isWorkflowDropDisabled || isDropDisabled) && dropErrorMessage) {
+          if (isWorkflowDropDisabled || (isDropDisabled && dropErrorMessage)) {
             setToast({
               type: TOAST_TYPE.WARNING,
               title: t("common.warning"),
-              message: dropErrorMessage,
+              message: isWorkflowDropDisabled ? t("workflows.workflow_disabled.title") : dropErrorMessage,
             });
             return;
           }

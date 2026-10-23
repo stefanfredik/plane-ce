@@ -44,7 +44,7 @@ from plane.db.models import (
     EstimatePoint,
     IssueType,
 )
-from plane.utils import work_item_types
+from plane.utils import work_item_types, workflows
 from plane.utils.content_validator import (
     validate_html_content,
     validate_binary_data,
@@ -206,6 +206,8 @@ class IssueCreateSerializer(BaseSerializer):
             .exists()
         ):
             raise serializers.ValidationError("Work item type is not valid for this project")
+
+        workflows.validate_state_change(self.instance, attrs)
 
         return attrs
 

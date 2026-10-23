@@ -95,6 +95,23 @@
           "message": "Reviewer aturan perubahan status tidak dapat dimodifikasi. Silakan coba lagi."
         }
       }
+    },
+    "label": "Workflow",
+    "settings": {
+      "heading": "Workflow",
+      "description": "Atur ke mana item kerja boleh pindah, siapa yang boleh memindahkan, dan apa yang wajib diisi lebih dulu.",
+      "enable": "Terapkan workflow",
+      "enable_description": "Jika aktif, aturan ini berlaku untuk setiap perubahan status: daftar, papan, halaman item kerja, dan API.",
+      "free_moves": "Belum ada perubahan status yang diizinkan, jadi item kerja boleh pindah ke status mana pun.",
+      "requires": "Wajib diisi sebelum masuk",
+      "requires_none": "Tidak ada yang wajib",
+      "requires_tooltip": "Item kerja hanya bisa masuk ke status ini setelah semua ini terisi. Properti hanya berlaku untuk tipe item kerja yang memakainya.",
+      "anyone": "Siapa saja",
+      "fields": {
+        "assignees": "Assignee",
+        "target_date": "Tenggat",
+        "estimate_point": "Estimasi"
+      }
     }
   }
 }

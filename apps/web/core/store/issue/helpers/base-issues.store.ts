@@ -34,6 +34,8 @@ import { convertToISODateString } from "@plane/utils";
 import { CycleService } from "@/services/cycle.service";
 import { IssueArchiveService, IssueService } from "@/services/issue";
 import { ModuleService } from "@/services/module.service";
+// components
+import { toastWorkflowError } from "@/components/workflow/error";
 //
 import type { IIssueRootStore } from "../root.store";
 import {
@@ -588,6 +590,8 @@ export abstract class BaseIssuesStore implements IBaseIssuesStore {
       // If errored out update store again to revert the change
       this.rootIssueStore.issues.updateIssue(issueId, issueBeforeUpdate ?? {});
       this.updateIssueList(issueBeforeUpdate, { ...issueBeforeUpdate, ...data } as TIssue);
+      // a blocked state change says why, whichever control made it
+      toastWorkflowError(error);
       throw error;
     }
   }

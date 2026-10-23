@@ -26,6 +26,7 @@ from .issue_type import urlpatterns as issue_type_urls
 from .work_item_dashboard import urlpatterns as work_item_dashboard_urls
 from .customer import urlpatterns as customer_urls
 from .intake_form import urlpatterns as intake_form_urls
+from .workflow import urlpatterns as workflow_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -39,6 +40,7 @@ urlpatterns = [
     *work_item_dashboard_urls,
     *customer_urls,
     *intake_form_urls,
+    *workflow_urls,
     *module_urls,
     *notification_urls,
     *page_urls,

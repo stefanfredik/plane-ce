@@ -75,6 +75,8 @@ import type { IWorkItemDashboardStore } from "./work-item-dashboard.store";
 import { WorkItemDashboardStore } from "./work-item-dashboard.store";
 import type { ICustomerStore } from "./customer.store";
 import { CustomerStore } from "./customer.store";
+import type { IWorkflowStore } from "./workflow.store";
+import { WorkflowStore } from "./workflow.store";
 
 enableStaticRendering(typeof window === "undefined");
 
@@ -112,6 +114,7 @@ export class CoreRootStore {
   workItemType: IWorkItemTypeStore;
   workItemDashboard: IWorkItemDashboardStore;
   customer: ICustomerStore;
+  workflow: IWorkflowStore;
 
   constructor() {
     this.router = new RouterStore();
@@ -146,6 +149,7 @@ export class CoreRootStore {
     this.workItemType = new WorkItemTypeStore(this);
     this.workItemDashboard = new WorkItemDashboardStore();
     this.customer = new CustomerStore();
+    this.workflow = new WorkflowStore();
     this.timelineStore = new TimeLineStore(this);
   }
 
@@ -183,6 +187,7 @@ export class CoreRootStore {
     this.workItemType = new WorkItemTypeStore(this);
     this.workItemDashboard = new WorkItemDashboardStore();
     this.customer = new CustomerStore();
+    this.workflow = new WorkflowStore();
     this.timelineStore = new TimeLineStore(this);
   }
 }

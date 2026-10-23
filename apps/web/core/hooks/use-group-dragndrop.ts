@@ -15,6 +15,7 @@ import { useIssues } from "./store/use-issues";
 import { useIssuesActions } from "./use-issues-actions";
 import { useWorkItemType } from "./store/use-work-item-type";
 import { errorMessage } from "@/components/work-item-types/constants";
+import { workflowErrorMessage } from "@/components/workflow/error";
 
 type DNDStoreType =
   | EIssuesStoreType.PROJECT
@@ -133,6 +134,8 @@ export const useGroupIssuesDragNDrop = (
       subGroupBy,
       orderBy !== "sort_order"
     ).catch((err) => {
+      // the store already explained a blocked state change
+      if (workflowErrorMessage(err)) return;
       setToast({
         title: "Error!",
         type: TOAST_TYPE.ERROR,

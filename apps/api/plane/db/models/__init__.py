@@ -91,6 +91,7 @@ from .issue_type import (
 )
 
 from .intake_form import IntakeForm
+from .workflow import ProjectWorkflow
 
 from .recent_visit import UserRecentVisit
 

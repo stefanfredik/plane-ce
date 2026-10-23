@@ -38,6 +38,7 @@ export type TProjectSettingsTabs =
   | "labels"
   | "work_item_types"
   | "estimates"
+  | "workflows"
   | "automations";
 export type TProjectSettingsItem = {
   key: TProjectSettingsTabs;

@@ -218,11 +218,12 @@ export const ListGroup = observer(function ListGroup(props: Props) {
           if (!source || !destination) return;
 
           if (isWorkflowDropDisabled || group.isDropDisabled) {
-            if (group.dropErrorMessage)
+            const message = isWorkflowDropDisabled ? t("workflows.workflow_disabled.title") : group.dropErrorMessage;
+            if (message)
               setToast({
                 type: TOAST_TYPE.WARNING,
                 title: t("common.warning"),
-                message: group.dropErrorMessage,
+                message,
               });
             return;
           }

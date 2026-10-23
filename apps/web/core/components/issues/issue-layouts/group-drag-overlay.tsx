@@ -5,7 +5,7 @@
  */
 
 import { useRef } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Lock } from "lucide-react";
 // plane imports
 import { ISSUE_ORDER_BY_OPTIONS } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
@@ -57,7 +57,14 @@ export function GroupDragOverlay(props: Props) {
         { hidden: !shouldOverlayBeVisible }
       )}
     >
-      {workflowDisabledSource ? null : (
+      {workflowDisabledSource ? (
+        isDropDisabled && (
+          <div className="my-8 flex items-center rounded-sm p-3 text-danger-secondary">
+            <Lock width={13} height={13} /> &nbsp;
+            <span>{t("workflows.workflow_disabled.title")}</span>
+          </div>
+        )
+      ) : (
         <div
           className={cn("my-8 flex flex-col items-center rounded-sm p-3", {
             "text-secondary": shouldOverlayBeVisible,

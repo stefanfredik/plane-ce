@@ -1,3 +1,6 @@
+// oxlint-disable jsx_a11y/click-events-have-key-events
+// oxlint-disable jsx_a11y/no-static-element-interactions
+// oxlint-disable unicorn/consistent-function-scoping
 /**
  * Copyright (c) 2023-present Plane Software, Inc. and contributors
  * SPDX-License-Identifier: AGPL-3.0-only
@@ -149,6 +152,8 @@ export const DraftIssueProperties = observer(function DraftIssueProperties(props
           value={issue.state_id}
           onChange={handleState}
           projectId={issue.project_id}
+          // drafts are not work items yet, so the workflow does not apply
+          alwaysAllowStateChange
           buttonVariant="border-with-text"
           renderByDefault={isMobile}
           showTooltip

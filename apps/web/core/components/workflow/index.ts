@@ -6,3 +6,4 @@
 
 export * from "./state-option";
 export * from "./use-workflow-drag-n-drop";
+export * from "./error";

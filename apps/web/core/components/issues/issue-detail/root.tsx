@@ -1,3 +1,4 @@
+// oxlint-disable no-shadow
 /**
  * Copyright (c) 2023-present Plane Software, Inc. and contributors
  * SPDX-License-Identifier: AGPL-3.0-only
@@ -26,6 +27,7 @@ import { useAppRouter } from "@/hooks/use-app-router";
 import { IssuePeekOverview } from "../peek-overview";
 import { IssueMainContent } from "./main-content";
 import { IssueDetailsSidebar } from "./sidebar";
+import { workflowErrorMessage } from "@/components/workflow/error";
 
 export type TIssueOperations = {
   fetch: (workspaceSlug: string, projectId: string, issueId: string, loader?: boolean) => Promise<void>;
@@ -96,6 +98,7 @@ export const IssueDetailRoot = observer(function IssueDetailRoot(props: TIssueDe
           await updateIssue(workspaceSlug, projectId, issueId, data);
         } catch (error) {
           console.log("Error in updating issue:", error);
+          if (workflowErrorMessage(error)) return;
           setToast({
             title: t("common.error.label"),
             type: TOAST_TYPE.ERROR,
