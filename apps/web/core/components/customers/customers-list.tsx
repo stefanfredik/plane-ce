@@ -104,10 +104,8 @@ export const CustomersList = observer(function CustomersList({ workspaceSlug, ca
                       <span className="truncate">{customer.name}</span>
                       {customer.archived_at && <Archive className="size-3 text-tertiary" />}
                     </Link>
-                    {(customer.domain || customer.email) && (
-                      <div className="pl-7 text-caption-sm-regular text-tertiary">
-                        {customer.domain || customer.email}
-                      </div>
+                    {customer.email && (
+                      <div className="pl-7 text-caption-sm-regular text-tertiary">{customer.email}</div>
                     )}
                   </td>
                   <td className="px-4 py-2 text-body-sm-regular text-secondary">{customer.contract_status ?? "—"}</td>

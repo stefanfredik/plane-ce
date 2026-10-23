@@ -380,7 +380,6 @@ export const CustomerDetail = observer(function CustomerDetail(props: Props) {
         <div className="space-y-2 rounded-lg border-[0.5px] border-subtle p-4">
           <h3 className="text-body-sm-medium text-primary">{t("cust.attributes")}</h3>
           {attribute(t("cust.email"), customer.email)}
-          {attribute(t("cust.domain"), customer.domain)}
           {attribute(t("cust.contract_status"), customer.contract_status)}
         </div>
         {properties.length > 0 && (

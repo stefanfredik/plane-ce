@@ -27,7 +27,6 @@ type Props = {
 type TDraft = {
   name: string;
   email: string;
-  domain: string;
   contract_status: string;
   description: string;
 };
@@ -35,7 +34,6 @@ type TDraft = {
 const EMPTY: TDraft = {
   name: "",
   email: "",
-  domain: "",
   contract_status: "",
   description: "",
 };
@@ -72,7 +70,6 @@ export const CustomerFormModal = observer(function CustomerFormModal(props: Prop
         ? {
             name: customer.name,
             email: customer.email ?? "",
-            domain: customer.domain ?? "",
             contract_status: customer.contract_status ?? "",
             description: htmlToText(customer.description_html ?? ""),
           }
@@ -89,7 +86,6 @@ export const CustomerFormModal = observer(function CustomerFormModal(props: Prop
     const data = {
       name: draft.name.trim(),
       email: draft.email.trim() || null,
-      domain: draft.domain.trim() || null,
       contract_status: draft.contract_status || null,
       description_html: textToHtml(draft.description),
     };
@@ -161,7 +157,6 @@ export const CustomerFormModal = observer(function CustomerFormModal(props: Prop
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {field("email", t("cust.email"), "noc@example.com", "email")}
-          {field("domain", t("cust.domain"), "example.com")}
           {select("contract_status", t("cust.contract_status"), CUSTOMER_CONTRACT_STATUSES)}
         </div>
         <div className="flex justify-end gap-2 border-t-[0.5px] border-subtle pt-4">
