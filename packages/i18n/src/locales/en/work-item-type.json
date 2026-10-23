@@ -864,5 +864,45 @@
       "done": "Done {time}",
       "due": "Due {time}"
     }
+  },
+  "project_integrations": {
+    "label": "Integrations",
+    "description": "Connect GitLab and Sentry to this project with webhooks.",
+    "webhook_url": "Webhook URL",
+    "secret_token": "Secret token",
+    "copy": "Copy",
+    "copied": "Copied to clipboard",
+    "rotate": "New token",
+    "last_event": "Last event: {event}, {time}",
+    "no_event": "No events received yet.",
+    "saved": "Integration saved",
+    "error": "Could not save the integration",
+    "no_change": "Leave the state",
+    "setup": "Setup",
+    "gitlab": {
+      "title": "GitLab",
+      "description": "Merge requests and commits that mention a work item (like {identifier}-12) are linked to it, and merge request events can move it.",
+      "setup": "In GitLab open the repository's Settings → Webhooks, paste the URL and the secret token, and tick Push events and Merge request events.",
+      "on_open": "When a merge request is opened",
+      "on_merge": "When it is merged",
+      "on_close": "When it is closed",
+      "post_comments": "Comment on the work item"
+    },
+    "sentry": {
+      "title": "Sentry",
+      "description": "New Sentry issues become work items here; resolving one in Sentry moves the work item on, and a regression brings it back.",
+      "setup": "In Sentry create an Internal Integration (Settings → Developer Settings) with this webhook URL, Issue & Event read access and the issue webhook, then paste its client secret here. The legacy WebHooks plugin also works with the URL alone.",
+      "client_secret": "Client secret",
+      "secret_set": "A client secret is saved. Paste a new one to replace it.",
+      "secret_placeholder": "Paste the client secret",
+      "type": "Work item type",
+      "state": "Start in",
+      "default_state": "Default state",
+      "resolved": "When resolved in Sentry",
+      "reopened": "When it comes back",
+      "assignees": "Assign to",
+      "labels": "Labels",
+      "priorities": "Priority by level"
+    }
   }
 }

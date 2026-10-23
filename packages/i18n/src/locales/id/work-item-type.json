@@ -864,5 +864,45 @@
       "done": "Selesai {time}",
       "due": "Batas {time}"
     }
+  },
+  "project_integrations": {
+    "label": "Integrasi",
+    "description": "Hubungkan GitLab dan Sentry ke project ini lewat webhook.",
+    "webhook_url": "URL webhook",
+    "secret_token": "Secret token",
+    "copy": "Salin",
+    "copied": "Disalin ke clipboard",
+    "rotate": "Token baru",
+    "last_event": "Event terakhir: {event}, {time}",
+    "no_event": "Belum ada event yang diterima.",
+    "saved": "Integrasi disimpan",
+    "error": "Integrasi gagal disimpan",
+    "no_change": "Biarkan status",
+    "setup": "Cara memasang",
+    "gitlab": {
+      "title": "GitLab",
+      "description": "Merge request dan commit yang menyebut item kerja (misalnya {identifier}-12) ditautkan ke item itu, dan event merge request bisa memindahkannya.",
+      "setup": "Di GitLab buka Settings → Webhooks pada repositori, tempel URL dan secret token, lalu centang Push events dan Merge request events.",
+      "on_open": "Saat merge request dibuka",
+      "on_merge": "Saat di-merge",
+      "on_close": "Saat ditutup",
+      "post_comments": "Beri komentar di item kerja"
+    },
+    "sentry": {
+      "title": "Sentry",
+      "description": "Issue Sentry baru menjadi item kerja di sini; jika di-resolve di Sentry, item kerja ikut pindah, dan jika muncul lagi dibuka kembali.",
+      "setup": "Di Sentry buat Internal Integration (Settings → Developer Settings) dengan URL webhook ini, akses baca Issue & Event serta webhook issue, lalu tempel client secret-nya di sini. Plugin WebHooks lama juga bisa dengan URL saja.",
+      "client_secret": "Client secret",
+      "secret_set": "Client secret sudah tersimpan. Tempel yang baru untuk menggantinya.",
+      "secret_placeholder": "Tempel client secret",
+      "type": "Tipe item kerja",
+      "state": "Mulai di",
+      "default_state": "Status default",
+      "resolved": "Saat di-resolve di Sentry",
+      "reopened": "Saat muncul lagi",
+      "assignees": "Tugaskan ke",
+      "labels": "Label",
+      "priorities": "Prioritas menurut level"
+    }
   }
 }

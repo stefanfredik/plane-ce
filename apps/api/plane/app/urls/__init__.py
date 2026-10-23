@@ -29,6 +29,7 @@ from .intake_form import urlpatterns as intake_form_urls
 from .workflow import urlpatterns as workflow_urls
 from .automation import urlpatterns as automation_urls
 from .sla import urlpatterns as sla_urls
+from .project_integration import urlpatterns as project_integration_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -45,6 +46,7 @@ urlpatterns = [
     *workflow_urls,
     *automation_urls,
     *sla_urls,
+    *project_integration_urls,
     *module_urls,
     *notification_urls,
     *page_urls,

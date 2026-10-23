@@ -36,6 +36,7 @@ from plane.db.models import (
     User,
 )
 from plane.utils import work_item_types
+from plane.utils.bots import get_bot
 
 EVENTS = (
     "work_item_created",
@@ -89,25 +90,12 @@ class AutomationError(Exception):
 
 
 def bot_user():
-    user = User.objects.filter(is_bot=True, bot_type="AUTOMATION").first()
-    if user:
-        return user
-    user = User.objects.create(
-        email="automation@bots.plane.local",
-        username="plane_automation_bot",
-        first_name="Automation",
-        display_name="Automation",
-        is_bot=True,
-        bot_type="AUTOMATION",
-        is_active=True,
-    )
-    user.set_unusable_password()
-    user.save(update_fields=["password"])
-    return user
+    return get_bot("AUTOMATION", "Automation")
 
 
 def is_bot(user_id):
-    return bool(user_id) and User.objects.filter(pk=user_id, is_bot=True).exists()
+    """Only the Automation bot is ignored; work items made by integrations still run automations."""
+    return bool(user_id) and User.objects.filter(pk=user_id, is_bot=True, bot_type="AUTOMATION").exists()
 
 
 # ---------------------------------------------------------------------------
