@@ -30,6 +30,8 @@ from .label import ProjectLabelsEndpoint
 
 from .custom_property import PublishedPropertiesEndpoint, PublishedPropertyValuesEndpoint
 
+from .intake_form import PublicIntakeFormEndpoint
+
 from .asset import EntityAssetEndpoint, AssetRestoreEndpoint, EntityBulkAssetEndpoint
 
 from .meta import ProjectMetaDataEndpoint

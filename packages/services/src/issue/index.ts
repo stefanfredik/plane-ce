@@ -6,3 +6,4 @@
 
 export * from "./sites-issue.service";
 export * from "./sites-custom-property.service";
+export * from "./sites-intake-form.service";

@@ -25,6 +25,7 @@ from .exporter import urlpatterns as exporter_urls
 from .issue_type import urlpatterns as issue_type_urls
 from .work_item_dashboard import urlpatterns as work_item_dashboard_urls
 from .customer import urlpatterns as customer_urls
+from .intake_form import urlpatterns as intake_form_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -37,6 +38,7 @@ urlpatterns = [
     *issue_type_urls,
     *work_item_dashboard_urls,
     *customer_urls,
+    *intake_form_urls,
     *module_urls,
     *notification_urls,
     *page_urls,

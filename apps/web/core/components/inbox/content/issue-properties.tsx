@@ -25,6 +25,7 @@ import { PriorityDropdown } from "@/components/dropdowns/priority";
 import { StateDropdown } from "@/components/dropdowns/state/dropdown";
 import type { TIssueOperations } from "@/components/issues/issue-detail";
 import { IssueLabel } from "@/components/issues/issue-detail/label";
+import { IssueCustomProperties } from "@/components/work-item-types/issue-custom-properties";
 // hooks
 import { useProject } from "@/hooks/store/use-project";
 import { useAppRouter } from "@/hooks/use-app-router";
@@ -208,6 +209,18 @@ export const InboxIssueContentProperties = observer(function InboxIssueContentPr
               </div>
             )}
           </div>
+          {/* custom properties of the work item's type (filled in on intake forms, too) */}
+          {issue.id && (
+            <div className="mt-3 border-t-[0.5px] border-subtle pt-3">
+              <IssueCustomProperties
+                workspaceSlug={workspaceSlug}
+                projectId={projectId}
+                issueId={issue.id}
+                typeId={issue.type_id}
+                disabled={!isEditable}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

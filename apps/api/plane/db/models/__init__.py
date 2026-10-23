@@ -90,6 +90,8 @@ from .issue_type import (
     MULTI_VALUE_PROPERTY_TYPES,
 )
 
+from .intake_form import IntakeForm
+
 from .recent_visit import UserRecentVisit
 
 from .label import Label

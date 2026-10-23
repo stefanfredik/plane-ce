@@ -17,9 +17,15 @@ from plane.space.views import (
     ProjectMetaDataEndpoint,
     PublishedPropertiesEndpoint,
     PublishedPropertyValuesEndpoint,
+    PublicIntakeFormEndpoint,
 )
 
 urlpatterns = [
+    path(
+        "intake-forms/<str:anchor>/",
+        PublicIntakeFormEndpoint.as_view(),
+        name="public-intake-form",
+    ),
     path(
         "anchor/<str:anchor>/properties/",
         PublishedPropertiesEndpoint.as_view(),

@@ -15,6 +15,8 @@ export default [
   layout("./issues/[anchor]/layout.tsx", { id: "views-anchor-layout" }, [
     route("views/:anchor", "./issues/[anchor]/page.tsx", { id: "views-anchor-page" }),
   ]),
+  // Public intake forms (no sign-in)
+  route("intake/:anchor", "./intake/[anchor]/page.tsx"),
   // Catch-all route for 404 handling
   route("*", "./not-found.tsx"),
 ] satisfies RouteConfig;
