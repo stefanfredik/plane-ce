@@ -13,6 +13,7 @@ import { useIssueDetails } from "@/hooks/store/use-issue-details";
 // local imports
 import { FullScreenPeekView } from "./full-screen-peek-view";
 import { SidePeekView } from "./side-peek-view";
+import { usePublishedBasePath } from "@/hooks/use-published-base-path";
 
 type TIssuePeekOverview = {
   anchor: string;
@@ -23,6 +24,7 @@ type TIssuePeekOverview = {
 export const IssuePeekOverview = observer(function IssuePeekOverview(props: TIssuePeekOverview) {
   const { anchor, peekId, handlePeekClose } = props;
   const router = useRouter();
+  const basePath = usePublishedBasePath();
   const searchParams = useSearchParams();
   // query params
   const board = searchParams.get("board") || undefined;
@@ -58,7 +60,7 @@ export const IssuePeekOverview = observer(function IssuePeekOverview(props: TIss
     if (state && state.length > 0) queryParams = { ...queryParams, state: state };
     if (labels && labels.length > 0) queryParams = { ...queryParams, labels: labels };
     queryParams = new URLSearchParams(queryParams).toString();
-    router.push(`/issues/${anchor}?${queryParams}`);
+    router.push(`${basePath}/${anchor}?${queryParams}`);
   };
 
   return (

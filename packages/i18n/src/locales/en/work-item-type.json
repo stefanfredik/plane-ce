@@ -605,7 +605,10 @@
     "types_using_none": "Not used by any type",
     "update": "Update",
     "mandatory_badge": "Mandatory",
-    "property_type_label": "Property type"
+    "property_type_label": "Property type",
+    "show_on_published": "Show on published pages",
+    "show_on_published_hint": "Visitors of a published project or view see this property's values (read-only) in the table layout.",
+    "shown_on_published": "Shown on published pages"
   },
   "dash": {
     "title": "Dashboards",

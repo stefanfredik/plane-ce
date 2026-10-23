@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { observer } from "mobx-react";
-import { Info, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Globe, Info, Pencil, Plus, Search, Trash2 } from "lucide-react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
@@ -127,6 +127,11 @@ export const WorkItemPropertiesTab = observer(function WorkItemPropertiesTab(pro
                       <span className="flex items-center gap-2 text-body-sm-medium text-primary">
                         <WorkItemPropertyIcon property={property} className="text-tertiary" />
                         <span className="truncate">{property.display_name}</span>
+                        {property.is_public && (
+                          <Tooltip tooltipContent={t("wit.shown_on_published")}>
+                            <Globe className="size-3 text-accent-primary" />
+                          </Tooltip>
+                        )}
                       </span>
                     </td>
                     <td className="px-3 py-2.5">

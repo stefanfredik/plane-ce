@@ -23,6 +23,7 @@ import type { TIssueLayout } from "@/types/issue";
 import { IssuesLayoutSelection } from "./layout-selection";
 import { NavbarTheme } from "./theme";
 import { UserAvatar } from "./user-avatar";
+import { usePublishedBasePath } from "@/hooks/use-published-base-path";
 
 export type NavbarControlsProps = {
   publishSettings: PublishStore;
@@ -33,6 +34,7 @@ export const NavbarControls = observer(function NavbarControls(props: NavbarCont
   const { publishSettings } = props;
   // router
   const router = useRouter();
+  const basePath = usePublishedBasePath();
   const searchParams = useSearchParams();
   // query params
   const board = searchParams.get("board") || undefined;
@@ -74,7 +76,7 @@ export const NavbarControls = observer(function NavbarControls(props: NavbarCont
         if (activeLayout === undefined || activeLayout !== currentBoard) {
           const { query, queryParam } = queryParamGenerator({ board: currentBoard, peekId, priority, state, labels });
           const params: any = {
-            display_filters: { layout: (query?.board as string[])[0] },
+            display_filters: { layout: (query?.board as string[] | undefined)?.[0] },
             filters: {
               priority: query?.priority ?? undefined,
               state: query?.state ?? undefined,
@@ -84,7 +86,7 @@ export const NavbarControls = observer(function NavbarControls(props: NavbarCont
 
           if (!isIssueFiltersUpdated(anchor, params)) {
             initIssueFilters(anchor, params);
-            router.push(`/issues/${anchor}?${queryParam}`);
+            router.push(`${basePath}/${anchor}?${queryParam}`);
           }
         }
       }
@@ -97,6 +99,7 @@ export const NavbarControls = observer(function NavbarControls(props: NavbarCont
     priority,
     peekId,
     activeLayout,
+    basePath,
     router,
     initIssueFilters,
     setPeekId,

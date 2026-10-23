@@ -123,3 +123,71 @@ class TestPublishedViewPublicPages:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert settings.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.contract
+class TestPublishedCustomProperties:
+    """Only properties marked public reach the published page, and only for items the page lists."""
+
+    @pytest.fixture
+    def severity(self, session_client, workspace, project, issues):
+        base = f"/api/workspaces/{workspace.slug}/projects/{project.id}"
+        types = session_client.post(f"{base}/work-item-types/enable/", {}, format="json").data["types"]
+        task = types[0]["id"]
+        prop = session_client.post(
+            f"{base}/work-item-types/{task}/properties/",
+            {"display_name": "Severity", "property_type": "OPTION", "options": [{"name": "Major"}]},
+            format="json",
+        ).data
+        for issue in issues.values():
+            session_client.put(
+                f"{base}/issues/{issue.id}/property-values/",
+                {"values": {prop["id"]: [prop["options"][0]["id"]]}},
+                format="json",
+            )
+        return prop
+
+    @pytest.fixture
+    def anchor(self, session_client, workspace, project, view):
+        return session_client.post(publish_url(workspace, project, view), {}, format="json").data["anchor"]
+
+    def _make_public(self, session_client, workspace, project, prop):
+        session_client.patch(
+            f"/api/workspaces/{workspace.slug}/projects/{project.id}/work-item-properties/{prop['id']}/",
+            {"is_public": True},
+            format="json",
+        )
+
+    def test_hidden_until_marked_public(self, session_client, workspace, project, severity, anchor, issues):
+        public = APIClient()
+        ids = ",".join(str(i.id) for i in issues.values())
+
+        before = public.get(f"/api/public/anchor/{anchor}/properties/").data
+        self._make_public(session_client, workspace, project, severity)
+        after = public.get(f"/api/public/anchor/{anchor}/properties/").data
+        values = public.get(f"/api/public/anchor/{anchor}/property-values/", {"issue_ids": ids}).data
+
+        assert before == []
+        assert [p["name"] for p in after] == ["Severity"]
+        # the view only lists the urgent item, so the other item's values stay hidden
+        assert values == {str(issues["open"].id): {severity["id"]: ["Major"]}}
+
+    def test_files_cannot_be_public(self, session_client, workspace, project, severity):
+        base = f"/api/workspaces/{workspace.slug}/projects/{project.id}"
+        response = session_client.post(
+            f"{base}/work-item-properties/",
+            {"display_name": "Logs", "property_type": "FILE", "is_public": True},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_private_view_hides_values(self, session_client, workspace, project, view, severity, anchor, issues):
+        self._make_public(session_client, workspace, project, severity)
+        IssueView.objects.filter(id=view.id).update(access=0)
+
+        response = APIClient().get(
+            f"/api/public/anchor/{anchor}/property-values/", {"issue_ids": str(issues["open"].id)}
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND

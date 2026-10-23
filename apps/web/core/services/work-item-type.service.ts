@@ -51,6 +51,8 @@ export type TWorkItemProperty = {
   is_multi: boolean;
   is_required: boolean;
   is_active: boolean;
+  /** Shown read-only on published project and view pages. */
+  is_public?: boolean;
   sort_order: number;
   default_value: string[];
   settings: Record<string, unknown>;

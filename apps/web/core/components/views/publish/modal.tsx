@@ -33,6 +33,7 @@ type Props = {
 const LAYOUTS: { key: TProjectPublishLayouts; label: string }[] = [
   { key: "list", label: "List" },
   { key: "kanban", label: "Kanban" },
+  { key: "spreadsheet", label: "Spreadsheet" },
 ];
 
 const DEFAULTS: Required<Omit<TViewPublishPayload, "view_props">> & { view_props: TProjectPublishViewProps } = {

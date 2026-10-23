@@ -99,6 +99,8 @@ class IssueProperty(ProjectBaseModel):
     is_multi = models.BooleanField(default=False)
     is_required = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    # Shown (read-only) on published project and view pages; off by default.
+    is_public = models.BooleanField(default=False)
     sort_order = models.FloatField(default=65535)
     # Values pre-filled on new work items, as the same shape the API accepts.
     default_value = models.JSONField(default=list, blank=True)

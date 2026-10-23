@@ -86,3 +86,18 @@ export const errorMessage = (error: unknown, fallback: string) => {
   if (data?.errors) return Object.values(data.errors).join(" ");
   return data?.error ?? fallback;
 };
+
+/** Kinds that may be shown on published pages (files, relations and rich text stay private). */
+export const PUBLIC_PROPERTY_TYPES: TWorkItemPropertyType[] = [
+  "TEXT",
+  "PARAGRAPH",
+  "NUMBER",
+  "OPTION",
+  "BOOLEAN",
+  "DATE",
+  "URL",
+  "EMAIL",
+  "MEMBER",
+  "FORMULA",
+  "CASCADING",
+];

@@ -605,7 +605,10 @@
     "types_using_none": "Belum dipakai tipe mana pun",
     "update": "Perbarui",
     "mandatory_badge": "Wajib",
-    "property_type_label": "Jenis properti"
+    "property_type_label": "Jenis properti",
+    "show_on_published": "Tampilkan di halaman publik",
+    "show_on_published_hint": "Pengunjung project atau view yang dipublikasikan melihat nilai properti ini (hanya baca) di tampilan tabel.",
+    "shown_on_published": "Tampil di halaman publik"
   },
   "dash": {
     "title": "Dashboard",

@@ -87,9 +87,7 @@ export const CustomersList = observer(function CustomersList({ workspaceSlug, ca
             <thead className="bg-layer-1 text-caption-md-medium text-tertiary">
               <tr>
                 <th className="px-4 py-2 font-medium">{t("cust.name")}</th>
-                <th className="px-4 py-2 font-medium">{t("cust.stage")}</th>
                 <th className="px-4 py-2 font-medium">{t("cust.contract_status")}</th>
-                <th className="px-4 py-2 font-medium">{t("cust.revenue")}</th>
                 <th className="px-4 py-2 text-right font-medium">{t("cust.requests")}</th>
                 <th className="px-4 py-2 text-right font-medium">{t("cust.work_items")}</th>
               </tr>
@@ -112,9 +110,7 @@ export const CustomersList = observer(function CustomersList({ workspaceSlug, ca
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-body-sm-regular text-secondary">{customer.stage ?? "—"}</td>
                   <td className="px-4 py-2 text-body-sm-regular text-secondary">{customer.contract_status ?? "—"}</td>
-                  <td className="px-4 py-2 text-body-sm-regular text-secondary">{customer.revenue ?? "—"}</td>
                   <td className="px-4 py-2 text-right text-body-sm-regular text-secondary">
                     {customer.customer_request_count}
                   </td>

@@ -20,6 +20,7 @@ import type { PublishStore } from "@/store/publish/publish.store";
 import { SomethingWentWrongError } from "./error";
 import { IssueKanbanLayoutRoot } from "./kanban/base-kanban-root";
 import { IssuesListLayoutRoot } from "./list/base-list-root";
+import { IssueSpreadsheetLayoutRoot } from "./spreadsheet/base-spreadsheet-root";
 
 type Props = {
   peekId: string | undefined;
@@ -67,6 +68,11 @@ export const IssuesLayoutsRoot = observer(function IssuesLayoutsRoot(props: Prop
           {activeLayout === "list" && (
             <div className="relative size-full overflow-y-auto">
               <IssuesListLayoutRoot anchor={anchor} />
+            </div>
+          )}
+          {activeLayout === "spreadsheet" && (
+            <div className="relative size-full overflow-hidden">
+              <IssueSpreadsheetLayoutRoot anchor={anchor} />
             </div>
           )}
           {activeLayout === "kanban" && (

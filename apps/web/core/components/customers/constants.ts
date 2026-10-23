@@ -21,8 +21,7 @@ export const CUSTOMER_PROPERTY_TYPES: TCustomerPropertyType[] = [
 
 export const CUSTOMER_MULTI_TYPES: TCustomerPropertyType[] = ["OPTION", "MEMBER"];
 
-/** Same choices Plane offers for a customer's stage and contract status. */
-export const CUSTOMER_STAGES = ["Lead", "Sales qualified lead", "Contract negotiation", "Closed won", "Closed lost"];
+/** Contract status choices for a customer. */
 export const CUSTOMER_CONTRACT_STATUSES = ["Active", "Pre contract", "Signed", "Inactive"];
 
 export const errorMessage = (error: unknown, fallback: string) => {

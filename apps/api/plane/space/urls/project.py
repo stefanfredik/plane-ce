@@ -15,9 +15,21 @@ from plane.space.views import (
     ProjectLabelsEndpoint,
     ProjectMembersEndpoint,
     ProjectMetaDataEndpoint,
+    PublishedPropertiesEndpoint,
+    PublishedPropertyValuesEndpoint,
 )
 
 urlpatterns = [
+    path(
+        "anchor/<str:anchor>/properties/",
+        PublishedPropertiesEndpoint.as_view(),
+        name="published-properties",
+    ),
+    path(
+        "anchor/<str:anchor>/property-values/",
+        PublishedPropertyValuesEndpoint.as_view(),
+        name="published-property-values",
+    ),
     path(
         "anchor/<str:anchor>/meta/",
         ProjectMetaDataEndpoint.as_view(),

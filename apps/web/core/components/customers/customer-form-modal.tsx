@@ -15,7 +15,7 @@ import { CustomSelect, EModalPosition, EModalWidth, Input, ModalCore, TextArea }
 import { useCustomer } from "@/hooks/store/use-customer";
 // local
 import type { TCustomer } from "@/services/customer.service";
-import { CUSTOMER_CONTRACT_STATUSES, CUSTOMER_STAGES, errorMessage } from "./constants";
+import { CUSTOMER_CONTRACT_STATUSES, errorMessage } from "./constants";
 
 type Props = {
   isOpen: boolean;
@@ -27,24 +27,16 @@ type Props = {
 type TDraft = {
   name: string;
   email: string;
-  website_url: string;
   domain: string;
-  employees: string;
-  stage: string;
   contract_status: string;
-  revenue: string;
   description: string;
 };
 
 const EMPTY: TDraft = {
   name: "",
   email: "",
-  website_url: "",
   domain: "",
-  employees: "",
-  stage: "",
   contract_status: "",
-  revenue: "",
   description: "",
 };
 
@@ -80,12 +72,8 @@ export const CustomerFormModal = observer(function CustomerFormModal(props: Prop
         ? {
             name: customer.name,
             email: customer.email ?? "",
-            website_url: customer.website_url ?? "",
             domain: customer.domain ?? "",
-            employees: customer.employees?.toString() ?? "",
-            stage: customer.stage ?? "",
             contract_status: customer.contract_status ?? "",
-            revenue: customer.revenue ?? "",
             description: htmlToText(customer.description_html ?? ""),
           }
         : EMPTY
@@ -101,12 +89,8 @@ export const CustomerFormModal = observer(function CustomerFormModal(props: Prop
     const data = {
       name: draft.name.trim(),
       email: draft.email.trim() || null,
-      website_url: draft.website_url.trim() || null,
       domain: draft.domain.trim() || null,
-      employees: draft.employees.trim() ? Number(draft.employees) : null,
-      stage: draft.stage || null,
       contract_status: draft.contract_status || null,
-      revenue: draft.revenue.trim() || null,
       description_html: textToHtml(draft.description),
     };
     try {
@@ -138,7 +122,7 @@ export const CustomerFormModal = observer(function CustomerFormModal(props: Prop
     </div>
   );
 
-  const select = (key: "stage" | "contract_status", label: string, choices: string[]) => (
+  const select = (key: "contract_status", label: string, choices: string[]) => (
     <div className="space-y-1">
       <span className="text-caption-md-medium text-secondary">{label}</span>
       <CustomSelect
@@ -177,12 +161,8 @@ export const CustomerFormModal = observer(function CustomerFormModal(props: Prop
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {field("email", t("cust.email"), "noc@example.com", "email")}
-          {field("website_url", t("cust.website"), "https://example.com", "url")}
           {field("domain", t("cust.domain"), "example.com")}
-          {field("employees", t("cust.employees"), "50", "number")}
-          {select("stage", t("cust.stage"), CUSTOMER_STAGES)}
           {select("contract_status", t("cust.contract_status"), CUSTOMER_CONTRACT_STATUSES)}
-          {field("revenue", t("cust.revenue"), "Rp 25.000.000 / bulan")}
         </div>
         <div className="flex justify-end gap-2 border-t-[0.5px] border-subtle pt-4">
           <Button variant="secondary" type="button" onClick={() => onClose()}>

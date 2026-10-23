@@ -5,3 +5,4 @@
  */
 
 export * from "./sites-issue.service";
+export * from "./sites-custom-property.service";

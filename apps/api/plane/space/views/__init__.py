@@ -28,6 +28,8 @@ from .state import ProjectStatesEndpoint
 
 from .label import ProjectLabelsEndpoint
 
+from .custom_property import PublishedPropertiesEndpoint, PublishedPropertyValuesEndpoint
+
 from .asset import EntityAssetEndpoint, AssetRestoreEndpoint, EntityBulkAssetEndpoint
 
 from .meta import ProjectMetaDataEndpoint

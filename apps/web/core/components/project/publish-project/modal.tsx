@@ -45,6 +45,7 @@ const VIEW_OPTIONS: {
 }[] = [
   { key: "list", label: "List" },
   { key: "kanban", label: "Kanban" },
+  { key: "spreadsheet", label: "Spreadsheet" },
 ];
 
 export const PublishProjectModal = observer(function PublishProjectModal(props: Props) {

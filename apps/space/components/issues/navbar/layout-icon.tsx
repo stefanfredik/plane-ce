@@ -5,7 +5,7 @@
  */
 
 import type { TIssueLayout } from "@plane/constants";
-import { ListLayoutIcon, BoardLayoutIcon } from "@plane/propel/icons";
+import { ListLayoutIcon, BoardLayoutIcon, SheetLayoutIcon } from "@plane/propel/icons";
 import type { ISvgIcons } from "@plane/propel/icons";
 
 export function IssueLayoutIcon({
@@ -23,6 +23,8 @@ export function IssueLayoutIcon({
       return <ListLayoutIcon {...iconProps} />;
     case "kanban":
       return <BoardLayoutIcon {...iconProps} />;
+    case "spreadsheet":
+      return <SheetLayoutIcon {...iconProps} />;
     default:
       return null;
   }

@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, ArchiveRestore, ExternalLink, Link2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, Link2, Pencil, Plus, Trash2, X } from "lucide-react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
@@ -198,17 +198,6 @@ export const CustomerDetail = observer(function CustomerDetail(props: Props) {
                 </span>
               )}
             </div>
-            {customer.website_url && (
-              <a
-                href={customer.website_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-body-sm-regular text-accent-primary hover:underline"
-              >
-                {customer.website_url}
-                <ExternalLink className="size-3" />
-              </a>
-            )}
           </div>
           {canEdit && (
             <div className="flex flex-wrap gap-2">
@@ -392,10 +381,7 @@ export const CustomerDetail = observer(function CustomerDetail(props: Props) {
           <h3 className="text-body-sm-medium text-primary">{t("cust.attributes")}</h3>
           {attribute(t("cust.email"), customer.email)}
           {attribute(t("cust.domain"), customer.domain)}
-          {attribute(t("cust.employees"), customer.employees?.toLocaleString())}
-          {attribute(t("cust.stage"), customer.stage)}
           {attribute(t("cust.contract_status"), customer.contract_status)}
-          {attribute(t("cust.revenue"), customer.revenue)}
         </div>
         {properties.length > 0 && (
           <div className="space-y-2 rounded-lg border-[0.5px] border-subtle p-4">

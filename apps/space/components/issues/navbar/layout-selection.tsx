@@ -18,6 +18,7 @@ import { useIssueFilter } from "@/hooks/store/use-issue-filter";
 // mobx
 import type { TIssueLayout } from "@/types/issue";
 import { IssueLayoutIcon } from "./layout-icon";
+import { usePublishedBasePath } from "@/hooks/use-published-base-path";
 
 type Props = {
   anchor: string;
@@ -29,6 +30,7 @@ export const IssuesLayoutSelection = observer(function IssuesLayoutSelection(pro
   const { t } = useTranslation();
   // router
   const router = useRouter();
+  const basePath = usePublishedBasePath();
   const searchParams = useSearchParams();
   // query params
   const labels = searchParams.get("labels");
@@ -44,7 +46,7 @@ export const IssuesLayoutSelection = observer(function IssuesLayoutSelection(pro
   const handleCurrentBoardView = (boardView: TIssueLayout) => {
     updateIssueFilters(anchor, "display_filters", "layout", boardView);
     const { queryParam } = queryParamGenerator({ board: boardView, peekId, priority, state, labels });
-    router.push(`/issues/${anchor}?${queryParam}`);
+    router.push(`${basePath}/${anchor}?${queryParam}`);
   };
 
   return (

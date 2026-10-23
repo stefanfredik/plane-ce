@@ -19,6 +19,7 @@ import { queryParamGenerator } from "@/helpers/query-param-generator";
 import { useIssueFilter } from "@/hooks/store/use-issue-filter";
 // types
 import type { TIssueQueryFilters } from "@/types/issue";
+import { usePublishedBasePath } from "@/hooks/use-published-base-path";
 
 type IssueFiltersDropdownProps = {
   anchor: string;
@@ -28,6 +29,7 @@ export const IssueFiltersDropdown = observer(function IssueFiltersDropdown(props
   const { anchor } = props;
   // router
   const router = useRouter();
+  const basePath = usePublishedBasePath();
   // hooks
   const { getIssueFilters, updateIssueFilters } = useIssueFilter();
   // derived values
@@ -41,9 +43,9 @@ export const IssueFiltersDropdown = observer(function IssueFiltersDropdown(props
       const labels = key === "labels" ? value : (issueFilters?.filters?.labels ?? []);
 
       const { queryParam } = queryParamGenerator({ board: activeLayout, priority, state, labels });
-      router.push(`/issues/${anchor}?${queryParam}`);
+      router.push(`${basePath}/${anchor}?${queryParam}`);
     },
-    [anchor, activeLayout, issueFilters, router]
+    [anchor, activeLayout, basePath, issueFilters, router]
   );
 
   const handleFilters = useCallback(

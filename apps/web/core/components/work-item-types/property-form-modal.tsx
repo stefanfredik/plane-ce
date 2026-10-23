@@ -21,7 +21,14 @@ import type {
   TWorkItemPropertyOption,
   TWorkItemPropertyType,
 } from "@/services/work-item-type.service";
-import { DEFAULTABLE_TYPES, MULTI_VALUE_TYPES, OPTION_TYPES, PROPERTY_TYPES, errorMessage } from "./constants";
+import {
+  DEFAULTABLE_TYPES,
+  MULTI_VALUE_TYPES,
+  OPTION_TYPES,
+  PROPERTY_TYPES,
+  PUBLIC_PROPERTY_TYPES,
+  errorMessage,
+} from "./constants";
 import { DEFAULT_PROPERTY_ICON, PROPERTY_ICONS, propertyIconName } from "./property-icon";
 import { PropertyValueField } from "./property-value-field";
 
@@ -137,6 +144,7 @@ export const WorkItemPropertyFormModal = observer(function WorkItemPropertyFormM
   const [isRequired, setIsRequired] = useState(false);
   const [isMulti, setIsMulti] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const [isPublic, setIsPublic] = useState(false);
   const [options, setOptions] = useState<TDraftOption[]>([]);
   const [formula, setFormula] = useState("");
   const [defaultValue, setDefaultValue] = useState<string[]>([]);
@@ -152,6 +160,7 @@ export const WorkItemPropertyFormModal = observer(function WorkItemPropertyFormM
     setIsRequired(property?.is_required ?? false);
     setIsMulti(property?.is_multi ?? false);
     setIsActive(property?.is_active ?? true);
+    setIsPublic(property?.is_public ?? false);
     setOptions(property?.options?.length ? toDraftOptions(property.options) : [blankOption()]);
     setFormula(String(property?.settings?.formula ?? ""));
     setDefaultValue(property?.default_value ?? []);
@@ -161,6 +170,7 @@ export const WorkItemPropertyFormModal = observer(function WorkItemPropertyFormM
   const iconName = icon ?? (propertyType ? DEFAULT_PROPERTY_ICON[propertyType] : "");
 
   const canBeMulti = !!propertyType && MULTI_VALUE_TYPES.includes(propertyType);
+  const canBePublic = !!propertyType && PUBLIC_PROPERTY_TYPES.includes(propertyType);
   const hasOptions = !!propertyType && OPTION_TYPES.includes(propertyType);
   const isCascading = propertyType === "CASCADING";
   const isFormula = propertyType === "FORMULA";
@@ -178,6 +188,7 @@ export const WorkItemPropertyFormModal = observer(function WorkItemPropertyFormM
       is_required: !isFormula && isRequired,
       is_multi: canBeMulti && isMulti,
       is_active: isActive,
+      is_public: canBePublic && isPublic,
       ...(property ? {} : { property_type: propertyType as TWorkItemPropertyType }),
       ...(hasOptions ? { options: payloadOptions } : {}),
       ...(isFormula ? { settings: { ...property?.settings, formula: formula.trim() } } : {}),
@@ -381,6 +392,12 @@ export const WorkItemPropertyFormModal = observer(function WorkItemPropertyFormM
             </div>
           )}
           {canBeMulti && checkboxField("wit-prop-multi", t("wit.multiple"), isMulti, setIsMulti)}
+          {canBePublic && (
+            <div className="space-y-0.5">
+              {checkboxField("wit-prop-public", t("wit.show_on_published"), isPublic, setIsPublic)}
+              <p className="pl-6 text-caption-sm-regular text-tertiary">{t("wit.show_on_published_hint")}</p>
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t-[0.5px] border-subtle px-5 py-3">
           <div className="flex flex-wrap items-center gap-4">

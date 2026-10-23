@@ -299,6 +299,7 @@ def serialize_property(prop: IssueProperty, issue_type_id=None, batch=None):
         "is_multi": prop.is_multi,
         "is_required": prop.is_required,
         "is_active": prop.is_active,
+        "is_public": prop.is_public,
         "sort_order": prop.sort_order,
         "default_value": prop.default_value or [],
         "settings": prop.settings or {},
@@ -347,7 +348,31 @@ def serialize_project_issue_types(project_id):
 # Properties
 # ---------------------------------------------------------------------------
 
-PROPERTY_FIELDS = ("display_name", "description", "is_required", "is_active", "sort_order", "settings", "logo_props")
+PROPERTY_FIELDS = (
+    "display_name",
+    "description",
+    "is_required",
+    "is_active",
+    "is_public",
+    "sort_order",
+    "settings",
+    "logo_props",
+)
+
+# Kinds that can be shown on published pages (files, relations and rich text stay private).
+PUBLIC_KINDS = (
+    IssuePropertyType.TEXT,
+    IssuePropertyType.PARAGRAPH,
+    IssuePropertyType.NUMBER,
+    IssuePropertyType.OPTION,
+    IssuePropertyType.BOOLEAN,
+    IssuePropertyType.DATE,
+    IssuePropertyType.URL,
+    IssuePropertyType.EMAIL,
+    IssuePropertyType.MEMBER,
+    IssuePropertyType.FORMULA,
+    IssuePropertyType.CASCADING,
+)
 
 
 def _clean_property_payload(data, prop=None):
@@ -363,6 +388,8 @@ def _clean_property_payload(data, prop=None):
     is_multi = data.get("is_multi", getattr(prop, "is_multi", False))
     if is_multi and ptype not in MULTI_VALUE_PROPERTY_TYPES:
         errors["is_multi"] = "Only dropdown, member, file and relation properties can hold several values."
+    if data.get("is_public", getattr(prop, "is_public", False)) and ptype not in PUBLIC_KINDS:
+        errors["is_public"] = "Files, relations and rich text cannot be shown on published pages."
     if ptype in OPTION_TYPES:
         options = data.get("options")
         if prop is None and not options:
@@ -485,6 +512,7 @@ def create_property(project_id, issue_type, user, data):
         property_type=data["property_type"],
         is_multi=is_multi,
         is_required=bool(data.get("is_required", False)),
+        is_public=bool(data.get("is_public", False)),
         is_active=data.get("is_active", True),
         sort_order=data.get("sort_order", (last or 0) + 10000),
         settings=data.get("settings") or {},
