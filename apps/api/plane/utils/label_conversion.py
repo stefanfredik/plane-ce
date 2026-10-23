@@ -16,7 +16,6 @@ from django.db import transaction
 from plane.db.models import (
     Issue,
     IssueLabel,
-    IssueProperty,
     IssuePropertyOption,
     IssuePropertyType,
     IssuePropertyValue,
