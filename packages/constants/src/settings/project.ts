@@ -114,12 +114,19 @@ export const PROJECT_SETTINGS: Record<TProjectSettingsTabs, TProjectSettingsItem
     access: [EUserProjectRoles.ADMIN],
     highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/workflows/`,
   },
+  sla: {
+    key: "sla",
+    i18n_label: "sla.label",
+    href: `/sla`,
+    access: [EUserProjectRoles.ADMIN],
+    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/sla/`,
+  },
   automations: {
     key: "automations",
     i18n_label: "project_settings.automations.label",
     href: `/automations`,
     access: [EUserProjectRoles.ADMIN],
-    highlight: (pathname: string, baseUrl: string) => pathname === `${baseUrl}/automations/`,
+    highlight: (pathname: string, baseUrl: string) => pathname.startsWith(`${baseUrl}/automations/`),
   },
 };
 
@@ -140,5 +147,9 @@ export const GROUPED_PROJECT_SETTINGS: Record<PROJECT_SETTINGS_CATEGORY, TProjec
     PROJECT_SETTINGS["work_item_types"],
     PROJECT_SETTINGS["estimates"],
   ],
-  [PROJECT_SETTINGS_CATEGORY.EXECUTION]: [PROJECT_SETTINGS["workflows"], PROJECT_SETTINGS["automations"]],
+  [PROJECT_SETTINGS_CATEGORY.EXECUTION]: [
+    PROJECT_SETTINGS["workflows"],
+    PROJECT_SETTINGS["sla"],
+    PROJECT_SETTINGS["automations"],
+  ],
 };

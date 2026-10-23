@@ -27,6 +27,8 @@ from .work_item_dashboard import urlpatterns as work_item_dashboard_urls
 from .customer import urlpatterns as customer_urls
 from .intake_form import urlpatterns as intake_form_urls
 from .workflow import urlpatterns as workflow_urls
+from .automation import urlpatterns as automation_urls
+from .sla import urlpatterns as sla_urls
 
 urlpatterns = [
     *analytic_urls,
@@ -41,6 +43,8 @@ urlpatterns = [
     *customer_urls,
     *intake_form_urls,
     *workflow_urls,
+    *automation_urls,
+    *sla_urls,
     *module_urls,
     *notification_urls,
     *page_urls,

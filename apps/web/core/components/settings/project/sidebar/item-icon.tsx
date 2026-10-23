@@ -5,7 +5,7 @@
  */
 
 import type { LucideIcon } from "lucide-react";
-import { Layers, Users, Workflow, Zap } from "lucide-react";
+import { Layers, Timer, Users, Workflow, Zap } from "lucide-react";
 // plane imports
 import type { ISvgIcons } from "@plane/propel/icons";
 import {
@@ -35,5 +35,6 @@ export const PROJECT_SETTINGS_ICONS: Record<TProjectSettingsTabs, LucideIcon | R
   work_item_types: Layers,
   estimates: EstimatePropertyIcon,
   workflows: Workflow,
+  sla: Timer,
   automations: Zap,
 };

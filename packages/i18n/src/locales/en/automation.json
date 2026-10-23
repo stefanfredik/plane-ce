@@ -268,6 +268,88 @@
           }
         }
       }
+    },
+    "custom": {
+      "description": "If something happens and the work item matches, run actions for you. Actions run as the Automation bot.",
+      "never": "Never",
+      "triggers": {
+        "work_item_created": "Work item is created",
+        "state_changed": "State changes",
+        "priority_changed": "Priority changes",
+        "assignee_changed": "Assignees change",
+        "label_changed": "Labels change",
+        "property_changed": "A property changes",
+        "comment_added": "A comment is added",
+        "sla_breached": "SLA is breached",
+        "schedule": "On a schedule",
+        "manual": "Run by hand"
+      },
+      "any_property": "Any property",
+      "match_all": "all of these",
+      "match_any": "any of these",
+      "match_label": "Work items that match",
+      "no_conditions": "No conditions: it runs on every work item the trigger fires for.",
+      "schedule_scope": "A schedule looks at open work items only (up to 500 a run).",
+      "fields": {
+        "state": "State",
+        "state_group": "State group",
+        "priority": "Priority",
+        "type": "Work item type",
+        "assignees": "Assignees",
+        "labels": "Labels",
+        "sla_status": "SLA status",
+        "stale_days": "Not updated for",
+        "overdue": "Overdue"
+      },
+      "operators": {
+        "in": "is any of",
+        "not_in": "is none of",
+        "is_empty": "is empty",
+        "is_not_empty": "is not empty"
+      },
+      "days": "days",
+      "is_overdue": "is overdue",
+      "is_not_overdue": "is not overdue",
+      "sla": {
+        "on_track": "On track",
+        "at_risk": "At risk",
+        "breached": "Breached",
+        "met": "Met",
+        "missed": "Missed"
+      },
+      "actions": {
+        "change_state": "Change state",
+        "change_priority": "Change priority",
+        "add_assignees": "Add assignees",
+        "remove_assignees": "Remove assignees",
+        "add_labels": "Add labels",
+        "set_property": "Set a property",
+        "add_comment": "Add comment",
+        "send_telegram": "Send Telegram message",
+        "send_webhook": "Call a webhook"
+      },
+      "bot_token": "Bot token",
+      "chat_id": "Chat id",
+      "message": "Message",
+      "url": "URL",
+      "placeholders": "You can use these placeholders:",
+      "select": "Select",
+      "runs": "Run history",
+      "no_runs": "No runs yet.",
+      "run_now": "Run now",
+      "run_on": "Run on work items",
+      "run_started": "Ran on {count} work items",
+      "status": {
+        "success": "Success",
+        "failed": "Failed",
+        "skipped": "Nothing matched"
+      },
+      "save": "Save changes",
+      "discard": "Discard",
+      "saved": "Automation saved",
+      "unsaved": "Save your changes before switching it on.",
+      "delete_content": "The automation and its run history are removed. Work items it already changed stay as they are.",
+      "back": "Automations"
     }
   }
 }

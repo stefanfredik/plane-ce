@@ -268,6 +268,88 @@
           }
         }
       }
+    },
+    "custom": {
+      "description": "Jika sesuatu terjadi dan item kerja cocok, aksi dijalankan untuk Anda. Aksi dijalankan oleh bot Automation.",
+      "never": "Belum pernah",
+      "triggers": {
+        "work_item_created": "Item kerja dibuat",
+        "state_changed": "Status berubah",
+        "priority_changed": "Prioritas berubah",
+        "assignee_changed": "Assignee berubah",
+        "label_changed": "Label berubah",
+        "property_changed": "Properti berubah",
+        "comment_added": "Komentar ditambahkan",
+        "sla_breached": "SLA terlampaui",
+        "schedule": "Terjadwal",
+        "manual": "Dijalankan manual"
+      },
+      "any_property": "Properti apa saja",
+      "match_all": "semua kondisi ini",
+      "match_any": "salah satu kondisi ini",
+      "match_label": "Item kerja yang memenuhi",
+      "no_conditions": "Tanpa kondisi: berjalan untuk setiap item kerja yang memicu.",
+      "schedule_scope": "Jadwal hanya memeriksa item kerja yang masih terbuka (maks. 500 per jalan).",
+      "fields": {
+        "state": "Status",
+        "state_group": "Grup status",
+        "priority": "Prioritas",
+        "type": "Tipe item kerja",
+        "assignees": "Assignee",
+        "labels": "Label",
+        "sla_status": "Status SLA",
+        "stale_days": "Tidak diperbarui selama",
+        "overdue": "Lewat tenggat"
+      },
+      "operators": {
+        "in": "salah satu dari",
+        "not_in": "bukan salah satu dari",
+        "is_empty": "kosong",
+        "is_not_empty": "tidak kosong"
+      },
+      "days": "hari",
+      "is_overdue": "lewat tenggat",
+      "is_not_overdue": "belum lewat tenggat",
+      "sla": {
+        "on_track": "Aman",
+        "at_risk": "Berisiko",
+        "breached": "Terlampaui",
+        "met": "Terpenuhi",
+        "missed": "Terlewat"
+      },
+      "actions": {
+        "change_state": "Ubah status",
+        "change_priority": "Ubah prioritas",
+        "add_assignees": "Tambah assignee",
+        "remove_assignees": "Hapus assignee",
+        "add_labels": "Tambah label",
+        "set_property": "Isi properti",
+        "add_comment": "Tambah komentar",
+        "send_telegram": "Kirim pesan Telegram",
+        "send_webhook": "Panggil webhook"
+      },
+      "bot_token": "Token bot",
+      "chat_id": "Chat id",
+      "message": "Pesan",
+      "url": "URL",
+      "placeholders": "Placeholder yang bisa dipakai:",
+      "select": "Pilih",
+      "runs": "Riwayat jalan",
+      "no_runs": "Belum pernah berjalan.",
+      "run_now": "Jalankan sekarang",
+      "run_on": "Jalankan pada item kerja",
+      "run_started": "Dijalankan pada {count} item kerja",
+      "status": {
+        "success": "Berhasil",
+        "failed": "Gagal",
+        "skipped": "Tidak ada yang cocok"
+      },
+      "save": "Simpan perubahan",
+      "discard": "Batal",
+      "saved": "Otomatisasi disimpan",
+      "unsaved": "Simpan perubahan dulu sebelum mengaktifkannya.",
+      "delete_content": "Otomatisasi dan riwayat jalannya dihapus. Item kerja yang sudah diubah tetap seperti adanya.",
+      "back": "Otomatisasi"
     }
   }
 }

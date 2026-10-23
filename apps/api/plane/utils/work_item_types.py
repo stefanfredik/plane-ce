@@ -862,6 +862,14 @@ def save_issue_property_values(issue: Issue, values, actor, check_required=False
     recompute_formulas(issue)
     if activities and notify:
         transaction.on_commit(lambda: notify_subscribers(issue, actor, activities))
+    if activities:
+        from plane.utils import automations
+
+        changed = [pid for pid, values in clean.items() if values != current.get(pid, [])]
+        automations.queue(issue, ["property_changed"], getattr(actor, "id", None), [str(p) for p in changed])
+        from plane.utils import sla
+
+        sla.queue_refresh(issue.project_id, issue.id, ["property_changed"])
     return issue_property_values(issue)
 
 

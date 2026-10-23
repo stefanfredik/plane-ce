@@ -693,6 +693,7 @@
     "group_project": "Project",
     "group_type": "Work item type",
     "group_created_by": "Created by",
+    "group_sla_status": "SLA status",
     "created": "Created",
     "completed": "Completed",
     "days": "days",
@@ -827,5 +828,41 @@
     "required": "Required",
     "select": "Select",
     "yes": "Yes"
+  },
+  "sla": {
+    "label": "SLA",
+    "settings": {
+      "heading": "SLA",
+      "description": "Response and resolution targets. The clock starts when a work item is created. It is answered when the work item moves to a started state or someone other than its creator comments, and resolved in a completed or cancelled state.",
+      "enable": "Track SLA",
+      "enable_description": "Work items with a target get a response and resolution clock. A breach can start an automation (trigger: SLA is breached).",
+      "based_on": "Targets by",
+      "priority": "Priority",
+      "value": "Value",
+      "response": "Response within",
+      "resolution": "Resolve within",
+      "hours": "h",
+      "minutes": "m",
+      "at_risk": "At risk when this share of the time is left",
+      "saved": "SLA saved",
+      "error": "Could not save the SLA",
+      "now": "Open work items now",
+      "attention": "Needs attention"
+    },
+    "status": {
+      "on_track": "On track",
+      "at_risk": "At risk",
+      "breached": "Breached",
+      "met": "Met",
+      "missed": "Missed"
+    },
+    "issue": {
+      "response": "Response",
+      "resolution": "Resolution",
+      "left": "{time} left",
+      "over": "{time} over",
+      "done": "Done {time}",
+      "due": "Due {time}"
+    }
   }
 }

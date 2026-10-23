@@ -43,6 +43,7 @@ import { IssueLabel } from "./label";
 import { IssueModuleSelect } from "./module-select";
 import type { TIssueOperations } from "./root";
 import { IssueCustomersProperty } from "@/components/customers/issue-customers-property";
+import { IssueSlaProperty } from "@/components/sla/issue-sla-property";
 import { IssueCustomProperties } from "@/components/work-item-types/issue-custom-properties";
 
 type Props = {
@@ -257,6 +258,8 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
               issueId={issueId}
               disabled={!isEditable}
             />
+
+            <IssueSlaProperty workspaceSlug={workspaceSlug} projectId={projectId} issueId={issueId} />
           </div>
           <div className="mt-4 border-t-[0.5px] border-subtle pt-3">
             <IssueCustomProperties

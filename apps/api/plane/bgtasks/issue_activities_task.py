@@ -36,6 +36,8 @@ from plane.db.models import (
 )
 from plane.settings.redis import redis_instance
 from plane.utils.exception_logger import log_exception
+from plane.utils import automations, sla
+from plane.bgtasks.automation_task import dispatch_automations
 from plane.utils.issue_relation_mapper import get_inverse_relation
 from plane.utils.uuid import is_valid_uuid
 
@@ -1626,6 +1628,13 @@ def issue_activity(
 
         # Save all the values to database
         issue_activities_created = IssueActivity.objects.bulk_create(issue_activities)
+
+        # Keep the SLA clock current and let the project's automations react to the change
+        if issue_id is not None:
+            events = automations.events_from_activities(type, issue_activities_created)
+            sla.queue_refresh(project_id, issue_id, events)
+            if events and not automations.is_bot(actor_id) and automations.has_automations(project_id, events):
+                dispatch_automations.delay(str(issue_id), events, str(actor_id) if actor_id else None)
 
         if notification:
             notifications.delay(

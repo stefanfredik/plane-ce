@@ -38,9 +38,11 @@ from plane.db.models import (
     IssueProperty,
     IssuePropertyOption,
     IssuePropertyValue,
+    IssueSla,
     ModuleIssue,
     Project,
     ProjectMember,
+    SlaPolicy,
 )
 
 STATE_GROUP_ORDER = ["backlog", "unstarted", "started", "completed", "cancelled"]
@@ -56,7 +58,27 @@ PRIORITY_COLORS = {"urgent": "#991b1b", "high": "#ef4444", "medium": "#f59e0b", 
 OPEN_GROUPS = ["backlog", "unstarted", "started"]
 MAX_TABLE_ROWS = 50
 MAX_PERIODS = 24
-GROUPERS = {"state_group", "state", "priority", "assignee", "label", "module", "cycle", "project", "type", "created_by"}
+GROUPERS = {
+    "state_group",
+    "state",
+    "priority",
+    "assignee",
+    "label",
+    "module",
+    "cycle",
+    "project",
+    "type",
+    "created_by",
+    "sla_status",
+}
+SLA_LABELS = {
+    "breached": ("Breached", "#dc2626"),
+    "at_risk": ("At risk", "#f59e0b"),
+    "on_track": ("On track", "#16a34a"),
+    "missed": ("Missed", "#9f1239"),
+    "met": ("Met", "#0d9488"),
+}
+SLA_ROW_FIELDS = ("started_at", "response_due_at", "resolution_due_at", "responded_at", "resolved_at")
 TABLE_ORDERS = {"-created_at", "created_at", "-updated_at", "priority", "-target_date", "target_date"}
 
 
@@ -253,7 +275,41 @@ def group_data(issues, config):
         items = _through_grouping(issues, ModuleIssue, "module_id", "module__name", metric)
     elif group_by == "cycle":
         items = _through_grouping(issues, CycleIssue, "cycle_id", "cycle__name", metric)
+    elif group_by == "sla_status":
+        items = _sla_groups(issues, metric)
     return {"group_by": group_by, "metric": metric, "items": items}
+
+
+def _sla_groups(issues, metric):
+    """Work items by SLA status; items without an SLA count as "No SLA"."""
+    from plane.utils import sla
+
+    now = timezone.now()
+    percents = dict(
+        SlaPolicy.objects.filter(project_id__in=issues.values("project_id"), is_enabled=True).values_list(
+            "project_id", "at_risk_percent"
+        )
+    )
+    buckets = {}
+    rows = IssueSla.objects.filter(issue_id__in=issues.values("id"), project_id__in=list(percents))
+    for row in rows.only("issue_id", "project_id", *SLA_ROW_FIELDS):
+        overall = sla.statuses(row, percents[row.project_id], now)[2]
+        if overall:
+            buckets.setdefault(overall, []).append(row.issue_id)
+    items = [
+        {
+            "key": key,
+            "label": SLA_LABELS[key][0],
+            "value": _metric_value(issues.filter(id__in=buckets[key]), metric),
+            "color": SLA_LABELS[key][1],
+        }
+        for key in sla.STATUS_ORDER
+        if key in buckets
+    ]
+    without = issues.exclude(id__in=[issue_id for ids in buckets.values() for issue_id in ids])
+    if without.exists():
+        items.append({"key": "None", "label": "No SLA", "value": _metric_value(without, metric), "color": "#a3a3a3"})
+    return items
 
 
 def _custom_property_groups(issues, property_id, metric):

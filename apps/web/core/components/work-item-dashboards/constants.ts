@@ -18,6 +18,7 @@ export const GROUP_BY_OPTIONS = [
   "project",
   "type",
   "created_by",
+  "sla_status",
 ] as const;
 export const STATE_GROUPS = ["backlog", "unstarted", "started", "completed", "cancelled"];
 export const PRIORITIES = ["urgent", "high", "medium", "low", "none"];

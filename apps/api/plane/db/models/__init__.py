@@ -92,6 +92,8 @@ from .issue_type import (
 
 from .intake_form import IntakeForm
 from .workflow import ProjectWorkflow
+from .automation import Automation, AutomationRun
+from .sla import IssueSla, SlaPolicy
 
 from .recent_visit import UserRecentVisit
 

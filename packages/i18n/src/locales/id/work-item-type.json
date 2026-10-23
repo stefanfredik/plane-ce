@@ -693,6 +693,7 @@
     "group_project": "Project",
     "group_type": "Tipe item kerja",
     "group_created_by": "Dibuat oleh",
+    "group_sla_status": "Status SLA",
     "created": "Dibuat",
     "completed": "Selesai",
     "days": "hari",
@@ -827,5 +828,41 @@
     "required": "Wajib",
     "select": "Pilih",
     "yes": "Ya"
+  },
+  "sla": {
+    "label": "SLA",
+    "settings": {
+      "heading": "SLA",
+      "description": "Target respons dan penyelesaian. Jam mulai berjalan saat item kerja dibuat. Dianggap direspons saat item kerja pindah ke status berjalan atau orang selain pembuatnya berkomentar, dan selesai di status selesai atau batal.",
+      "enable": "Lacak SLA",
+      "enable_description": "Item kerja yang punya target mendapat jam respons dan penyelesaian. Pelanggaran bisa memicu otomatisasi (pemicu: SLA terlampaui).",
+      "based_on": "Target berdasarkan",
+      "priority": "Prioritas",
+      "value": "Nilai",
+      "response": "Respons dalam",
+      "resolution": "Selesai dalam",
+      "hours": "j",
+      "minutes": "m",
+      "at_risk": "Berisiko jika sisa waktu tinggal",
+      "saved": "SLA disimpan",
+      "error": "SLA gagal disimpan",
+      "now": "Item kerja terbuka saat ini",
+      "attention": "Perlu perhatian"
+    },
+    "status": {
+      "on_track": "Aman",
+      "at_risk": "Berisiko",
+      "breached": "Terlampaui",
+      "met": "Terpenuhi",
+      "missed": "Terlewat"
+    },
+    "issue": {
+      "response": "Respons",
+      "resolution": "Penyelesaian",
+      "left": "sisa {time}",
+      "over": "lewat {time}",
+      "done": "Selesai {time}",
+      "due": "Batas {time}"
+    }
   }
 }
