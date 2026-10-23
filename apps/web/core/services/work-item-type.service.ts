@@ -103,6 +103,30 @@ export type TRelatedWorkItem = {
 
 export type TWorkItemPropertyPayload = Partial<Omit<TWorkItemProperty, "id" | "issue_type_id">>;
 
+/** A parent label with child labels, e.g. "Reporter" over "Reporter: Triska". */
+export type TLabelGroup = { id: string; name: string; labels: number; uses: number };
+
+export type TLabelConversionRequest = {
+  label_id: string;
+  /** Add to this dropdown property; without it a new property is created. */
+  property_id?: string;
+  name?: string;
+  type_ids?: string[];
+  remove_labels?: boolean;
+  dry_run?: boolean;
+};
+
+export type TLabelConversionResult = {
+  label_group: string;
+  options: string[];
+  work_items: number;
+  conflicts: number;
+  already_set: number;
+  other_types: number;
+  is_multi: boolean;
+  property_id?: string;
+};
+
 export class WorkItemTypeService extends APIService {
   constructor() {
     super(API_BASE_URL);
@@ -185,6 +209,18 @@ export class WorkItemTypeService extends APIService {
 
   deletePoolProperty(workspaceSlug: string, projectId: string, propertyId: string) {
     return this.unwrap<void>(this.delete(`${this.base(workspaceSlug, projectId)}/work-item-properties/${propertyId}/`));
+  }
+
+  listLabelGroups(workspaceSlug: string, projectId: string) {
+    return this.unwrap<TLabelGroup[]>(
+      this.get(`${this.base(workspaceSlug, projectId)}/work-item-properties/from-labels/`)
+    );
+  }
+
+  convertLabels(workspaceSlug: string, projectId: string, data: TLabelConversionRequest) {
+    return this.unwrap<TLabelConversionResult>(
+      this.post(`${this.base(workspaceSlug, projectId)}/work-item-properties/from-labels/`, data)
+    );
   }
 
   linkProperties(workspaceSlug: string, projectId: string, typeId: string, propertyIds: string[]) {

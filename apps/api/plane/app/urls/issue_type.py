@@ -19,6 +19,7 @@ from plane.app.views.issue_type import (
     WorkItemTypePropertyLinkEndpoint,
     ProjectPropertyPoolEndpoint,
     ProjectPropertyPoolDetailEndpoint,
+    PropertyFromLabelsEndpoint,
 )
 
 PROJECT = "workspaces/<str:slug>/projects/<uuid:project_id>"
@@ -68,6 +69,11 @@ urlpatterns = [
     ),
     path(
         f"{PROJECT}/work-item-properties/", ProjectPropertyPoolEndpoint.as_view(), name="project-work-item-properties"
+    ),
+    path(
+        f"{PROJECT}/work-item-properties/from-labels/",
+        PropertyFromLabelsEndpoint.as_view(),
+        name="project-work-item-properties-from-labels",
     ),
     path(
         f"{PROJECT}/work-item-properties/<uuid:property_id>/",

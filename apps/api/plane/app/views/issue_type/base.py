@@ -205,6 +205,27 @@ class ProjectPropertyPoolDetailEndpoint(BaseAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class PropertyFromLabelsEndpoint(BaseAPIView):
+    """Turn a label group into a dropdown property: GET lists label groups, POST previews or converts."""
+
+    @allow_permission([ROLE.ADMIN])
+    def get(self, request, slug, project_id):
+        from plane.utils.label_conversion import label_groups
+
+        return Response(label_groups(project_id))
+
+    @allow_permission([ROLE.ADMIN])
+    def post(self, request, slug, project_id):
+        from plane.utils.label_conversion import LabelConversionError, convert
+
+        dry_run = request.data.get("dry_run", True) is not False
+        try:
+            result = convert(project_id, request.user, request.data, dry_run=dry_run)
+        except (LabelConversionError, wit.PropertyValueError) as e:
+            return _bad_request(e.errors)
+        return Response(result)
+
+
 class IssuePropertyValueEndpoint(BaseAPIView):
     """Read and write a work item's custom property values."""
 

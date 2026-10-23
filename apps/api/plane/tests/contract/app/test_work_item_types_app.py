@@ -849,3 +849,92 @@ class TestValueBatches:
 
         assert bad.status_code == status.HTTP_400_BAD_REQUEST
         assert too_many.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.contract
+class TestLabelConversion:
+    """A label group becomes a dropdown property, one option per child label."""
+
+    @pytest.fixture
+    def labelled(self, session_client, workspace, project, enabled, create_user):
+        from plane.db.models import IssueLabel, Label
+
+        parent = Label.objects.create(name="Reporter", project=project, workspace=workspace)
+        triska = Label.objects.create(name="Reporter: Triska", parent=parent, project=project, workspace=workspace)
+        noc = Label.objects.create(name="Reporter: NOC", parent=parent, project=project, workspace=workspace)
+        made = {}
+        for name, labels in (("one", [triska]), ("both", [triska, noc]), ("none", [])):
+            issue = session_client.post(url(workspace, project, "issues/"), {"name": name}, format="json").data
+            made[name] = issue["id"]
+            for label in labels:
+                IssueLabel.objects.create(issue_id=issue["id"], label=label, project=project, workspace=workspace)
+        return parent, made
+
+    def convert(self, client, workspace, project, **body):
+        return client.post(url(workspace, project, "work-item-properties/from-labels/"), body, format="json")
+
+    def values(self, client, workspace, project, issue_id):
+        return client.get(url(workspace, project, f"issues/{issue_id}/property-values/")).data
+
+    def test_groups_and_preview(self, session_client, workspace, project, labelled):
+        parent, made = labelled
+        groups = session_client.get(url(workspace, project, "work-item-properties/from-labels/")).data
+
+        preview = self.convert(session_client, workspace, project, label_id=str(parent.id), is_multi=False)
+
+        assert [(g["name"], g["labels"], g["uses"]) for g in groups] == [("Reporter", 2, 3)]
+        assert preview.data["options"] == ["NOC", "Triska"]
+        assert preview.data["work_items"] == 2
+        assert preview.data["conflicts"] == 0  # several labels make a new property multi-value
+        assert preview.data["is_multi"] is True
+        assert self.values(session_client, workspace, project, made["one"]) == {}
+
+    def test_convert_and_remove_labels(self, session_client, workspace, project, labelled):
+        from plane.db.models import IssueLabel
+
+        parent, made = labelled
+        result = self.convert(
+            session_client, workspace, project, label_id=str(parent.id), dry_run=False, remove_labels=True
+        ).data
+        prop = result["property_id"]
+        options = {
+            o["name"]: o["id"]
+            for o in session_client.get(url(workspace, project, "work-item-properties/")).data[0]["options"]
+        }
+
+        assert sorted(self.values(session_client, workspace, project, made["both"])[prop]) == sorted(
+            [options["NOC"], options["Triska"]]
+        )
+        assert self.values(session_client, workspace, project, made["one"])[prop] == [options["Triska"]]
+        assert not IssueLabel.objects.filter(label__parent=parent).exists()
+
+    def test_existing_single_property_keeps_values(self, session_client, workspace, project, labelled, enabled):
+        parent, made = labelled
+        task = enabled["types"][0]["id"]
+        prop = add_property(
+            session_client,
+            workspace,
+            project,
+            task,
+            display_name="Who",
+            property_type="OPTION",
+            options=[{"name": "Dev"}],
+        ).data
+        session_client.put(
+            url(workspace, project, f"issues/{made['one']}/property-values/"),
+            {"values": {prop["id"]: [prop["options"][0]["id"]]}},
+            format="json",
+        )
+
+        preview = self.convert(session_client, workspace, project, label_id=str(parent.id), property_id=prop["id"])
+        self.convert(session_client, workspace, project, label_id=str(parent.id), property_id=prop["id"], dry_run=False)
+        both = self.values(session_client, workspace, project, made["both"])[prop["id"]]
+        names = {
+            o["id"]: o["name"]
+            for o in session_client.get(url(workspace, project, "work-item-properties/")).data[0]["options"]
+        }
+
+        assert preview.data["already_set"] == 1
+        assert preview.data["conflicts"] == 1
+        assert self.values(session_client, workspace, project, made["one"])[prop["id"]] == [prop["options"][0]["id"]]
+        assert [names[v] for v in both] == ["NOC"]  # first by name wins on a single-value property

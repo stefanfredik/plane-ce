@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { observer } from "mobx-react";
-import { Globe, Info, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Globe, Info, Pencil, Plus, Search, Tags, Trash2 } from "lucide-react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
@@ -18,6 +18,7 @@ import { useWorkItemType } from "@/hooks/store/use-work-item-type";
 // local
 import type { TWorkItemProperty } from "@/services/work-item-type.service";
 import { errorMessage } from "./constants";
+import { ConvertLabelsModal } from "./convert-labels-modal";
 import { WorkItemPropertyIcon } from "./property-icon";
 import { WorkItemPropertyFormModal } from "./property-form-modal";
 import { WorkItemTypeBadge } from "./status-badge";
@@ -33,6 +34,7 @@ export const WorkItemPropertiesTab = observer(function WorkItemPropertiesTab(pro
   const [pendingDelete, setPendingDelete] = useState<TWorkItemProperty | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [query, setQuery] = useState("");
+  const [isConvertOpen, setIsConvertOpen] = useState(false);
 
   useEffect(() => {
     void store.fetchProjectProperties(workspaceSlug, projectId);
@@ -81,9 +83,14 @@ export const WorkItemPropertiesTab = observer(function WorkItemPropertiesTab(pro
             />
           </div>
           {isAdmin && (
-            <Button variant="primary" prependIcon={<Plus />} onClick={() => setForm({ open: true })}>
-              {t("wit.add_new_property")}
-            </Button>
+            <>
+              <Button variant="secondary" prependIcon={<Tags />} onClick={() => setIsConvertOpen(true)}>
+                {t("wit.convert_labels")}
+              </Button>
+              <Button variant="primary" prependIcon={<Plus />} onClick={() => setForm({ open: true })}>
+                {t("wit.add_new_property")}
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -179,6 +186,12 @@ export const WorkItemPropertiesTab = observer(function WorkItemPropertiesTab(pro
         workspaceSlug={workspaceSlug}
         projectId={projectId}
         property={form.property}
+      />
+      <ConvertLabelsModal
+        isOpen={isConvertOpen}
+        onClose={() => setIsConvertOpen(false)}
+        workspaceSlug={workspaceSlug}
+        projectId={projectId}
       />
       <AlertModalCore
         isOpen={!!pendingDelete}

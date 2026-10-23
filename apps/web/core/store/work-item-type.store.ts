@@ -7,6 +7,8 @@
 import { action, makeObservable, observable, runInAction } from "mobx";
 // services
 import type {
+  TLabelConversionRequest,
+  TLabelConversionResult,
   TProjectWorkItemTypes,
   TWorkItemProperty,
   TWorkItemPropertyPayload,
@@ -74,6 +76,12 @@ export interface IWorkItemTypeStore {
   /** Delete a property everywhere, with its values. */
   deletePoolProperty: (workspaceSlug: string, projectId: string, propertyId: string) => Promise<void>;
   linkProperties: (workspaceSlug: string, projectId: string, typeId: string, propertyIds: string[]) => Promise<void>;
+  /** Preview (dry run) or run a label group to dropdown property conversion. */
+  convertLabels: (
+    workspaceSlug: string,
+    projectId: string,
+    data: TLabelConversionRequest
+  ) => Promise<TLabelConversionResult>;
   fetchIssueValues: (workspaceSlug: string, projectId: string, issueId: string) => Promise<TWorkItemPropertyValues>;
   saveIssueValues: (
     workspaceSlug: string,
@@ -120,6 +128,7 @@ export class WorkItemTypeStore implements IWorkItemTypeStore {
       updatePoolProperty: action,
       deletePoolProperty: action,
       linkProperties: action,
+      convertLabels: action,
       fetchWorkspaceTypes: action,
       importTypes: action,
       bulkAssign: action,
@@ -226,6 +235,20 @@ export class WorkItemTypeStore implements IWorkItemTypeStore {
   deletePoolProperty = async (workspaceSlug: string, projectId: string, propertyId: string) => {
     await this.service.deletePoolProperty(workspaceSlug, projectId, propertyId);
     await this.refresh(workspaceSlug, projectId);
+  };
+
+  convertLabels = async (workspaceSlug: string, projectId: string, data: TLabelConversionRequest) => {
+    const result = await this.service.convertLabels(workspaceSlug, projectId, data);
+    if (data.dry_run === false) {
+      // values changed on many work items: drop the cached ones so lists reload them
+      runInAction(() => {
+        this.issueValues = {};
+      });
+      this.valuesRequested.clear();
+      await this.fetchProjectProperties(workspaceSlug, projectId);
+      await this.refresh(workspaceSlug, projectId);
+    }
+    return result;
   };
 
   linkProperties = async (workspaceSlug: string, projectId: string, typeId: string, propertyIds: string[]) => {

@@ -17,4 +17,5 @@ from .base import (
     WorkItemTypePropertyLinkEndpoint,
     ProjectPropertyPoolEndpoint,
     ProjectPropertyPoolDetailEndpoint,
+    PropertyFromLabelsEndpoint,
 )
